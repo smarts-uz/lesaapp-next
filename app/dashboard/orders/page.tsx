@@ -1,94 +1,53 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { OrdersTable } from "@/components/dashboard/orders-table"
-import { Plus, FileDown } from "lucide-react"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import { OrdersTable } from "@/components/dashboard/orders-table";
+import { Plus, FileDown } from "lucide-react";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const orders = await prisma.$queryRaw<Array<{
+    id: bigint;
+    date_created_gmt: Date;
+    status: string;
+    total_amount: number;
+    first_name: string | null;
+    last_name: string | null;
+  }>>`
+    SELECT o.id, o.date_created_gmt, o.status, o.total_amount, oa.first_name, oa.last_name
+    FROM wp_wc_orders o
+    LEFT JOIN wp_wc_order_addresses oa ON o.id = oa.order_id AND oa.address_type = 'billing'
+    ORDER BY o.date_created_gmt DESC
+  `;
+
+  const formattedOrders = orders.map((order) => ({
+    id: order.id.toString(),
+    number: `#ORD-${order.id.toString().padStart(3, "0")}`,
+    date: order.date_created_gmt?.toISOString() || new Date().toISOString(),
+    customer: order.first_name || order.last_name
+      ? `${order.first_name || ""} ${order.last_name || ""}`
+      : "Unknown Customer",
+    status: order.status || "pending",
+    total: Number(order.total_amount) || 0,
+  }));
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+    <div className="flex flex-col ">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <FileDown className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm">
+            <FileDown className="mr-2 h-3 w-3" />
             Export
           </Button>
-          <Button asChild>
+          <Button asChild size="sm">
             <Link href="/dashboard/orders/new">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-3 w-3" />
               New Order
             </Link>
           </Button>
         </div>
       </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="processing">Processing</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="refunded">Refunded</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Orders</CardTitle>
-              <CardDescription>View and manage all your orders</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="pending" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Orders</CardTitle>
-              <CardDescription>Orders awaiting payment or processing</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable status="pending" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="processing" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Processing Orders</CardTitle>
-              <CardDescription>Orders that are currently being processed</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable status="processing" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="completed" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Orders</CardTitle>
-              <CardDescription>Orders that have been fulfilled</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable status="completed" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="refunded" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Refunded Orders</CardTitle>
-              <CardDescription>Orders that have been refunded</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable status="refunded" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <OrdersTable initialOrders={formattedOrders} />
     </div>
-  )
+  );
 }
-

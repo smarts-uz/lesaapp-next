@@ -12,8 +12,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { fetchOrder } from "@/lib/woocommerce"
-import type { Order, Refund } from "@/types/pos"
+import type { Order, Refund, OrderItem, OrderBundleItem } from "@/types/pos"
 import { format } from "date-fns"
+import React from "react"
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -271,9 +272,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {order.items.map((item) => (
-                      <>
-                        <tr key={item.id}>
+                    {order.items.map((item: OrderItem) => (
+                      <React.Fragment key={item.id}>
+                        <tr>
                           <td className="whitespace-nowrap px-4 py-4">
                             <div className="flex items-center">
                               <div className="ml-4">
@@ -293,33 +294,26 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                             {formatCurrency(item.total)}
                           </td>
                         </tr>
-
-                        {/* Bundle items details */}
-                        {item.type === "bundle" &&
-                          item.bundleItems &&
-                          item.bundleItems.map((bundleItem) => (
-                            <tr key={`${item.id}-${bundleItem.id}`} className="bg-muted/20">
-                              <td className="px-4 py-2 pl-8 text-sm" colSpan={2}>
-                                <div>
-                                  <div className="font-medium">{bundleItem.name}</div>
-                                  {bundleItem.selectedOptions &&
-                                    Object.entries(bundleItem.selectedOptions).length > 0 && (
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {Object.entries(bundleItem.selectedOptions).map(([key, value]) => (
-                                          <span key={key} className="mr-2">
-                                            {key}: <span className="font-medium">{value}</span>
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2 text-sm text-right">{formatCurrency(bundleItem.price)}</td>
-                              <td className="px-4 py-2 text-sm text-right">{bundleItem.quantity}</td>
-                              <td className="px-4 py-2 text-sm text-right">{formatCurrency(bundleItem.total)}</td>
-                            </tr>
-                          ))}
-                      </>
+                        {item.type === "bundle" && item.bundleItems && item.bundleItems.map((bundleItem: OrderBundleItem) => (
+                          <tr key={`${item.id}-${bundleItem.id}`} className="bg-muted/20">
+                            <td className="px-4 py-2 pl-8 text-sm" colSpan={2}>
+                              <div>
+                                <div className="font-medium">{bundleItem.name}</div>
+                                {bundleItem.selectedOptions && (Object.entries(bundleItem.selectedOptions) as [string, string][]).map(([key, value]) => (
+                                  <div key={key} className="text-xs text-muted-foreground mt-1">
+                                    <span className="mr-2">
+                                      {key}: <span className="font-medium">{value}</span>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2 text-sm text-right">{formatCurrency(bundleItem.price)}</td>
+                            <td className="px-4 py-2 text-sm text-right">{bundleItem.quantity}</td>
+                            <td className="px-4 py-2 text-sm text-right">{formatCurrency(bundleItem.total)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
                     ))}
                   </tbody>
                   <tfoot>
