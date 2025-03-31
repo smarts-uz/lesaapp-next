@@ -9,6 +9,11 @@ export interface Product {
   type?: "simple" | "bundle"
   bundledItems?: BundledItem[]
   variations?: ProductVariation[]
+  sku?: string
+  virtual?: boolean
+  downloadable?: boolean
+  tax_status?: string
+  tax_class?: string
 }
 
 export interface ProductVariation {
@@ -39,7 +44,6 @@ export interface CartItem extends Product {
 export interface CustomizedBundleItem extends BundledItem {
   quantity: number
   selectedOptions?: Record<string, string>
-  quantity: number
 }
 
 export interface Order {
@@ -78,6 +82,15 @@ export interface Order {
   total: number
   refunds?: Refund[]
   compatibility_warnings?: string[]
+  currency?: string
+  customer_id?: number
+  billing_email?: string
+  payment_method?: string
+  payment_method_title?: string
+  transaction_id?: string
+  ip_address?: string
+  user_agent?: string
+  customer_note?: string
 }
 
 export interface OrderItem {
@@ -90,6 +103,17 @@ export interface OrderItem {
   refundable: boolean
   type?: "simple" | "bundle"
   bundleItems?: OrderBundleItem[]
+  order_id: number
+  product_id: number
+  variation_id: number
+  customer_id?: number
+  product_qty: number
+  product_net_revenue: number
+  product_gross_revenue: number
+  coupon_amount: number
+  tax_amount: number
+  shipping_amount: number
+  shipping_tax_amount: number
 }
 
 export interface OrderBundleItem {
@@ -100,6 +124,18 @@ export interface OrderBundleItem {
   quantity: number
   total: number
   selectedOptions?: Record<string, string>
+  order_item_id: number
+  parent_order_item_id: number
+  order_id: number
+  bundle_id: number
+  product_id: number
+  variation_id: number
+  customer_id?: number
+  product_qty: number
+  product_net_revenue: number
+  product_gross_revenue: number
+  coupon_amount: number
+  tax_amount: number
 }
 
 export interface Refund {

@@ -310,7 +310,7 @@ export function RefundDialog({ orderId, orderNumber, items, onRefundComplete }: 
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={refundDate} onSelect={setRefundDate} initialFocus />
+                    <Calendar mode="single" selected={refundDate} onSelect={(date) => date && setRefundDate(date)} initialFocus />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -474,7 +474,7 @@ export function RefundDialog({ orderId, orderNumber, items, onRefundComplete }: 
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={refundDate} onSelect={setRefundDate} initialFocus />
+                    <Calendar mode="single" selected={refundDate} onSelect={(date) => date && setRefundDate(date)} initialFocus />
                   </PopoverContent>
                 </Popover>
               </div>
