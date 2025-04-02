@@ -79,21 +79,10 @@ export function InCartBundleEditor({ bundle, onUpdateQuantity, onUpdateOption, o
                     </Button>
                   </div>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">{formatCurrency(item.price)}</span>
-                          <Info className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">
-                          Min: {item.minQuantity}, Max: {item.maxQuantity}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Info className="h-3 w-3" />
+                    <span>Min: {item.minQuantity}, Max: {item.maxQuantity}</span>
+                  </div>
                 </div>
               </div>
             </div>

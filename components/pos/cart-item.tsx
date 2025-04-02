@@ -9,6 +9,13 @@ import type { CartItem } from "@/types/pos"
 import { formatCurrency } from "@/lib/utils"
 import { InCartBundleEditor } from "./in-cart-bundle-editor"
 
+const calculateItemTotal = (item: CartItem) => {
+  if (item.type === "bundle") {
+    return item.price * item.quantity;
+  }
+  return item.price * item.quantity;
+}
+
 interface CartItemProps {
   item: CartItem
   index: number
@@ -72,7 +79,10 @@ export function CartItem({
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
-            <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-muted-foreground">{formatCurrency(item.price)}</span>
+              <span className="text-sm">x{item.quantity}</span>
+            </div>
           </div>
         </div>
         <div className="flex flex-col gap-1">

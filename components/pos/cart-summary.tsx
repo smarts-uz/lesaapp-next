@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { CreditCard, Banknote, Tag } from "lucide-react"
+import { Tag, Banknote, CreditCard } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 interface CartSummaryProps {
@@ -11,24 +11,12 @@ interface CartSummaryProps {
 }
 
 export function CartSummary({ subtotal, onCheckout }: CartSummaryProps) {
-  const tax = subtotal * 0.1
-  const total = subtotal + tax
-
   return (
     <div className="p-4 border-t">
       <div className="space-y-2 mb-4">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span>{formatCurrency(subtotal)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Tax</span>
-          <span>{formatCurrency(tax)}</span>
-        </div>
-        <Separator className="my-2" />
         <div className="flex justify-between font-bold">
           <span>Total</span>
-          <span>{formatCurrency(total)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
       </div>
 

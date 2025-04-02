@@ -208,19 +208,9 @@ export function POSClient({ products }: POSClientProps) {
           return item
         })
 
-        // Recalculate bundle price based on items
-        const bundleItemsPrice = updatedBundleItems.reduce((total, item) => {
-          return total + item.price * item.quantity
-        }, 0)
-
-        // Apply bundle discount (10%)
-        const bundleDiscount = bundleItemsPrice * 0.1
-        const adjustedPrice = bundleItemsPrice - bundleDiscount
-
         updatedCart[cartIndex] = {
           ...cartItem,
           bundleItems: updatedBundleItems,
-          price: adjustedPrice > 0 ? adjustedPrice : 0,
         }
       }
 
