@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,6 +35,137 @@ interface BundleCustomizationDialogProps {
   ) => void;
 }
 
+// Quantity control component for reusability
+interface QuantityControlProps {
+  quantity: number;
+  minQuantity: number;
+  maxQuantity: number;
+  onQuantityChange: (newQuantity: number) => void;
+  label?: string;
+  tooltipContent?: string;
+}
+
+function QuantityControl({
+  quantity,
+  minQuantity,
+  maxQuantity,
+  onQuantityChange,
+  label,
+  tooltipContent,
+}: QuantityControlProps) {
+  return (
+    <div className="flex items-center justify-between">
+      {label && (
+        <div className="flex items-center gap-1">
+          <Label className="text-xs">{label}</Label>
+          {tooltipContent && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{tooltipContent}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      )}
+      <div className="flex items-center border rounded-md">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-none"
+          onClick={() => onQuantityChange(quantity - 1)}
+          disabled={quantity <= minQuantity}
+        >
+          <Minus className="h-3 w-3" />
+        </Button>
+        <span className="w-7 text-center text-sm">{quantity}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-none"
+          onClick={() => onQuantityChange(quantity + 1)}
+          disabled={quantity >= maxQuantity}
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Bundle item component
+interface BundleItemProps {
+  item: CustomizedBundleItem;
+  onQuantityChange: (itemId: number, newQuantity: number) => void;
+}
+
+function BundleItem({ item, onQuantityChange }: BundleItemProps) {
+  return (
+    <div className="space-y-3 pb-3 border-b last:border-0">
+      <div className="flex items-start gap-3">
+        <div className="h-16 w-16 relative rounded overflow-hidden flex-shrink-0">
+          <Image
+            src={item.image || "/placeholder.svg?height=64&width=64"}
+            alt={item.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-sm">{item.name}</h4>
+              <span className="text-sm text-muted-foreground">
+                Stock: {item.stock}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Bundle component</p>
+
+          <div className="mt-2 space-y-2">
+            <QuantityControl
+              quantity={item.quantity}
+              minQuantity={item.minQuantity}
+              maxQuantity={item.maxQuantity}
+              onQuantityChange={(newQuantity) => onQuantityChange(item.id, newQuantity)}
+              label="Quantity"
+              tooltipContent={`Min: ${item.minQuantity}, Max: ${item.maxQuantity}`}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Compatibility warnings component
+interface CompatibilityWarningsProps {
+  warnings: string[];
+}
+
+function CompatibilityWarnings({ warnings }: CompatibilityWarningsProps) {
+  if (warnings.length === 0) return null;
+  
+  return (
+    <Alert variant="warning" className="mb-4">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Compatibility Warning</AlertTitle>
+      <AlertDescription>
+        <ul className="list-disc pl-4 mt-2">
+          {warnings.map((warning, index) => (
+            <li key={index}>{warning}</li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 export function BundleCustomizationDialog({
   open,
   onOpenChange,
@@ -42,21 +173,18 @@ export function BundleCustomizationDialog({
   allProducts,
   onAddToCart,
 }: BundleCustomizationDialogProps) {
-  const [customizedItems, setCustomizedItems] = useState<
-    CustomizedBundleItem[]
-  >([]);
-  const [totalPrice, setTotalPrice] = useState(product.price);
+  const [customizedItems, setCustomizedItems] = useState<CustomizedBundleItem[]>([]);
   const [bundleQuantity, setBundleQuantity] = useState(1);
-  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
-    []
-  );
+  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
+  
+  // Calculate total price based on bundle quantity
+  const totalPrice = useMemo(() => product.price * bundleQuantity, [product.price, bundleQuantity]);
 
   // Reset state function
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setBundleQuantity(1);
-    setTotalPrice(product.price);
     setCompatibilityWarnings([]);
-  };
+  }, []);
 
   // Initialize customized items when the dialog opens
   useEffect(() => {
@@ -78,12 +206,11 @@ export function BundleCustomizationDialog({
       });
 
       setCustomizedItems(initialItems);
-      calculateTotalPrice(initialItems);
     } else if (!open) {
       // Reset state when dialog is closed
       resetState();
     }
-  }, [open, product, allProducts]);
+  }, [open, product, allProducts, resetState]);
 
   // Check for compatibility warnings
   useEffect(() => {
@@ -126,14 +253,9 @@ export function BundleCustomizationDialog({
     setCompatibilityWarnings(warnings);
   }, [customizedItems]);
 
-  const calculateTotalPrice = (items: CustomizedBundleItem[]) => {
-    setTotalPrice(product.price * bundleQuantity);
-  };
-
-  const handleBundleQuantityChange = (newQuantity: number) => {
+  const handleBundleQuantityChange = useCallback((newQuantity: number) => {
     if (newQuantity < 1) newQuantity = 1;
     setBundleQuantity(newQuantity);
-    setTotalPrice(product.price * newQuantity);
     
     // Update bundled items quantities proportionally
     const updatedItems = customizedItems.map(item => {
@@ -155,20 +277,26 @@ export function BundleCustomizationDialog({
     });
     
     setCustomizedItems(updatedItems);
-  };
+  }, [bundleQuantity, customizedItems]);
 
-  const handleQuantityChange = (itemId: number, newQuantity: number) => {
+  const handleQuantityChange = useCallback((itemId: number, newQuantity: number) => {
     const item = customizedItems.find((i) => i.id === itemId);
     if (!item) return;
-    if (newQuantity < item.minQuantity) newQuantity = item.minQuantity;
-    if (newQuantity > item.maxQuantity) newQuantity = item.maxQuantity;
-    const updatedItems = customizedItems.map((i) =>
-      i.id === itemId ? { ...i, quantity: newQuantity } : i
+    
+    // Ensure quantity is within min/max limits
+    const validQuantity = Math.max(
+      item.minQuantity,
+      Math.min(newQuantity, item.maxQuantity)
     );
+    
+    const updatedItems = customizedItems.map((i) =>
+      i.id === itemId ? { ...i, quantity: validQuantity } : i
+    );
+    
     setCustomizedItems(updatedItems);
-  };
+  }, [customizedItems]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     // Filter out items with quantity 0
     const finalItems = customizedItems.filter((item) => item.quantity > 0);
 
@@ -185,7 +313,13 @@ export function BundleCustomizationDialog({
     
     // Close the dialog
     onOpenChange(false);
-  };
+  }, [customizedItems, onAddToCart, onOpenChange, product, resetState, totalPrice]);
+
+  // Filter visible items (non-optional or with quantity > 0)
+  const visibleItems = useMemo(() => 
+    customizedItems.filter((item) => !item.optional || item.quantity > 0),
+    [customizedItems]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,41 +346,15 @@ export function BundleCustomizationDialog({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-none"
-              onClick={() => handleBundleQuantityChange(bundleQuantity - 1)}
-              disabled={bundleQuantity <= 1}
-            >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <span className="w-7 text-center text-sm">{bundleQuantity}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-none"
-              onClick={() => handleBundleQuantityChange(bundleQuantity + 1)}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
+          <QuantityControl
+            quantity={bundleQuantity}
+            minQuantity={1}
+            maxQuantity={999}
+            onQuantityChange={handleBundleQuantityChange}
+          />
         </div>
 
-        {compatibilityWarnings.length > 0 && (
-          <Alert variant="warning" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Compatibility Warning</AlertTitle>
-            <AlertDescription>
-              <ul className="list-disc pl-4 mt-2">
-                {compatibilityWarnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+        <CompatibilityWarnings warnings={compatibilityWarnings} />
 
         <div className="flex-1 overflow-hidden">
           {/* Bundle Components */}
@@ -254,104 +362,18 @@ export function BundleCustomizationDialog({
             <h3 className="font-medium mb-2">Bundle Components</h3>
             <ScrollArea className="flex-1 border rounded-md p-2">
               <div className="space-y-4 pr-4">
-                {customizedItems.length === 0 ? (
+                {visibleItems.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No components in this bundle.
                   </div>
                 ) : (
-                  customizedItems
-                    .filter((item) => !item.optional || item.quantity > 0)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="space-y-3 pb-3 border-b last:border-0"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="h-16 w-16 relative rounded overflow-hidden flex-shrink-0">
-                            <Image
-                              src={
-                                item.image ||
-                                "/placeholder.svg?height=64&width=64"
-                              }
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-sm">
-                                  {item.name}
-                                </h4>
-                                <span className="text-sm  text-muted-foreground">
-                                  Stock: {item.stock}
-                                </span>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Bundle component
-                            </p>
-
-                            <div className="mt-2 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1">
-                                  <Label className="text-xs">Quantity</Label>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Info className="h-3 w-3 text-muted-foreground" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>
-                                          Min: {item.minQuantity}, Max:{" "}
-                                          {item.maxQuantity}
-                                        </p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-
-                                <div className="flex items-center border rounded-md">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-none"
-                                    onClick={() =>
-                                      handleQuantityChange(
-                                        item.id,
-                                        item.quantity - 1
-                                      )
-                                    }
-                                    disabled={item.quantity <= item.minQuantity}
-                                  >
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="w-7 text-center text-sm">
-                                    {item.quantity}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-none"
-                                    onClick={() =>
-                                      handleQuantityChange(
-                                        item.id,
-                                        item.quantity + 1
-                                      )
-                                    }
-                                    disabled={item.quantity >= item.maxQuantity}
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                  visibleItems.map((item) => (
+                    <BundleItem
+                      key={item.id}
+                      item={item}
+                      onQuantityChange={handleQuantityChange}
+                    />
+                  ))
                 )}
               </div>
             </ScrollArea>
