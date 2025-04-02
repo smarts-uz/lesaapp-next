@@ -170,6 +170,9 @@ export async function createOrder(orderData: any) {
           // If this is a bundle item with children, save those too
           if (item.type === 'bundle' && item.bundleItems && Array.isArray(item.bundleItems)) {
             for (const bundleItem of item.bundleItems) {
+              // Skip bundle items with zero quantity
+              if (bundleItem.quantity <= 0) continue;
+              
               const bundleOrderItem = await tx.wp_woocommerce_order_items.create({
                 data: {
                   order_id: order.id,
@@ -209,8 +212,34 @@ export async function createOrder(orderData: any) {
                 ]
               });
               
-              // Save to the wp_wc_order_bundle_lookup table using raw SQL
+              // Save to the wp_wc_order_bundle_lookup table
               try {
+                // First, ensure the table exists
+                await tx.$executeRaw`
+                  CREATE TABLE IF NOT EXISTS wp_wc_order_bundle_lookup (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    order_id BIGINT UNSIGNED NOT NULL,
+                    order_item_id BIGINT UNSIGNED NOT NULL,
+                    bundle_id BIGINT UNSIGNED NOT NULL,
+                    bundled_order_item_id BIGINT UNSIGNED NOT NULL,
+                    product_id BIGINT UNSIGNED NOT NULL,
+                    variation_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                    quantity INT NOT NULL DEFAULT 0,
+                    date_created DATETIME NOT NULL,
+                    PRIMARY KEY (id),
+                    KEY order_id (order_id),
+                    KEY order_item_id (order_item_id),
+                    KEY bundle_id (bundle_id),
+                    KEY product_id (product_id)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                `;
+                
+                // Now insert the data using a direct SQL query with proper escaping
+                const productId = BigInt(bundleItem.product_id || 0);
+                const variationId = BigInt(bundleItem.variation_id || 0);
+                const quantity = bundleItem.quantity || 0;
+                const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                
                 await tx.$executeRaw`
                   INSERT INTO wp_wc_order_bundle_lookup (
                     order_id, 
@@ -226,12 +255,14 @@ export async function createOrder(orderData: any) {
                     ${orderItem.order_item_id}, 
                     ${BigInt(item.id || 0)}, 
                     ${bundleOrderItem.order_item_id}, 
-                    ${BigInt(bundleItem.product_id || 0)}, 
-                    ${BigInt(bundleItem.variation_id || 0)}, 
-                    ${bundleItem.quantity || 0}, 
-                    ${new Date()}
+                    ${productId}, 
+                    ${variationId}, 
+                    ${quantity}, 
+                    ${now}
                   )
                 `;
+                
+                console.log('Successfully inserted bundle lookup data for order:', order.id);
               } catch (error) {
                 console.error('Error inserting bundle lookup data:', error);
                 // Continue with other operations even if this fails
