@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,19 +29,13 @@ const routes = [
     color: "text-pink-700",
   },
 ];
-];
 
 export default function Sidebar() {
-  const pathname = usePathname();
   const pathname = usePathname();
 
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-background z-10">
       <div className="flex h-14 items-center border-b px-4">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 font-semibold"
-        >
         <Link
           href="/dashboard"
           className="flex items-center gap-2 font-semibold"
@@ -57,10 +50,6 @@ export default function Sidebar() {
             <Button
               key={route.href}
               variant={pathname === route.href ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start",
-                pathname === route.href && "bg-secondary"
-              )}
               className={cn(
                 "w-full justify-start",
                 pathname === route.href && "bg-secondary"
@@ -84,6 +73,5 @@ export default function Sidebar() {
         </Button>
       </div>
     </div>
-  );
   );
 }
