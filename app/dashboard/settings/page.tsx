@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,6 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, CreditCard, Store, Bell } from "lucide-react"
 
 export default function SettingsPage() {
+  const [currency, setCurrency] = useState("UZS")
+
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem("currency") || "UZS"
+    setCurrency(savedCurrency)
+  }, [])
+
+  const handleCurrencyChange = (value: string) => {
+    setCurrency(value)
+    localStorage.setItem("currency", value)
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -65,11 +80,12 @@ export default function SettingsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="currency">Currency</Label>
-                  <Select defaultValue="usd">
+                  <Select value={currency} onValueChange={handleCurrencyChange}>
                     <SelectTrigger id="currency">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="uzs">UZS (so'm)</SelectItem>
                       <SelectItem value="usd">USD ($)</SelectItem>
                       <SelectItem value="eur">EUR (€)</SelectItem>
                       <SelectItem value="gbp">GBP (£)</SelectItem>
