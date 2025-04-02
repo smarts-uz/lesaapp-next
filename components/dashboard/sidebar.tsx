@@ -1,19 +1,21 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, Package, Tag, Settings, LogOut, HardHat } from "lucide-react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Tag,
+  Settings,
+  LogOut,
+  HardHat,
+} from "lucide-react";
 
 const routes = [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    color: "text-sky-500",
-  },
   {
     label: "POS",
     icon: ShoppingCart,
@@ -26,26 +28,18 @@ const routes = [
     href: "/dashboard/orders",
     color: "text-pink-700",
   },
-  {
-    label: "Discounts",
-    icon: Tag,
-    href: "/dashboard/discounts",
-    color: "text-emerald-500",
-  },
-  {
-    label: "Settings",
-    icon: Settings,
-    href: "/dashboard/settings",
-  },
-]
+];
 
 export default function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-background z-10">
       <div className="flex h-14 items-center border-b px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 font-semibold"
+        >
           <HardHat className="h-6 w-6" />
           <span>ScaffoldPOS</span>
         </Link>
@@ -56,7 +50,10 @@ export default function Sidebar() {
             <Button
               key={route.href}
               variant={pathname === route.href ? "secondary" : "ghost"}
-              className={cn("w-full justify-start", pathname === route.href && "bg-secondary")}
+              className={cn(
+                "w-full justify-start",
+                pathname === route.href && "bg-secondary"
+              )}
               asChild
             >
               <Link href={route.href}>
@@ -76,6 +73,5 @@ export default function Sidebar() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
-
