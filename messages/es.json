@@ -1,0 +1,27 @@
+{
+  "common": {
+    "welcome": "Bienvenido a LESA POS",
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "dashboard": "Panel de Control",
+    "products": "Productos",
+    "customers": "Clientes",
+    "sales": "Ventas",
+    "reports": "Informes",
+    "settings": "Configuración"
+  },
+  "auth": {
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su Contraseña?",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "todaySales": "Ventas de Hoy",
+    "totalSales": "Ventas Totales",
+    "totalCustomers": "Clientes Totales",
+    "totalProducts": "Productos Totales"
+  }
+} 

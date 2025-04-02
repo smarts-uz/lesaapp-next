@@ -1,0 +1,27 @@
+{
+  "common": {
+    "welcome": "Welcome to LESA POS",
+    "login": "Login",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "customers": "Customers",
+    "sales": "Sales",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "todaySales": "Today's Sales",
+    "totalSales": "Total Sales",
+    "totalCustomers": "Total Customers",
+    "totalProducts": "Total Products"
+  }
+} 

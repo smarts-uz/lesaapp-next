@@ -1,0 +1,27 @@
+{
+  "common": {
+    "welcome": "Bienvenue sur LESA POS",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de Bord",
+    "products": "Produits",
+    "customers": "Clients",
+    "sales": "Ventes",
+    "reports": "Rapports",
+    "settings": "Paramètres"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Mot de Passe",
+    "forgotPassword": "Mot de Passe Oublié?",
+    "signIn": "Se Connecter",
+    "signUp": "S'inscrire"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "todaySales": "Ventes du Jour",
+    "totalSales": "Ventes Totales",
+    "totalCustomers": "Nombre de Clients",
+    "totalProducts": "Nombre de Produits"
+  }
+} 
