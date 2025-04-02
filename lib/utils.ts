@@ -6,7 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency?: string): string {
-  const selectedCurrency = currency || localStorage.getItem("currency") || "UZS"
+  const getStoredCurrency = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem("currency")
+    }
+    return null
+  }
+  
+  const selectedCurrency = currency || getStoredCurrency() || "UZS"
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: selectedCurrency,
