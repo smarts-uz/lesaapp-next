@@ -44,6 +44,7 @@ export function BundleCustomizationDialog({
     CustomizedBundleItem[]
   >([]);
   const [totalPrice, setTotalPrice] = useState(product.price);
+  const [bundleQuantity, setBundleQuantity] = useState(1);
   const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
     []
   );
@@ -108,33 +109,25 @@ export function BundleCustomizationDialog({
   }, [customizedItems]);
 
   const calculateTotalPrice = (items: CustomizedBundleItem[]) => {
-    // Calculate the price of the customized items
-    const customizedItemsPrice = items.reduce((total, item) => {
-      return total + item.price * item.quantity;
-    }, 0);
+    const totalPrice = product.price * bundleQuantity;
+    setTotalPrice(totalPrice);
+  };
 
-    // Apply a small discount for bundling (10%)
-    const bundleDiscount = customizedItemsPrice * 0.1;
-    const adjustedPrice = customizedItemsPrice - bundleDiscount;
-
-    setTotalPrice(adjustedPrice > 0 ? adjustedPrice : 0);
+  const handleBundleQuantityChange = (newQuantity: number) => {
+    if (newQuantity < 1) newQuantity = 1;
+    setBundleQuantity(newQuantity);
+    setTotalPrice(product.price * newQuantity);
   };
 
   const handleQuantityChange = (itemId: number, newQuantity: number) => {
     const item = customizedItems.find((i) => i.id === itemId);
-
     if (!item) return;
-
-    // Ensure quantity is within allowed limits
     if (newQuantity < item.minQuantity) newQuantity = item.minQuantity;
     if (newQuantity > item.maxQuantity) newQuantity = item.maxQuantity;
-
     const updatedItems = customizedItems.map((i) =>
       i.id === itemId ? { ...i, quantity: newQuantity } : i
     );
-
     setCustomizedItems(updatedItems);
-    calculateTotalPrice(updatedItems);
   };
 
   const handleOptionChange = (
@@ -182,6 +175,42 @@ export function BundleCustomizationDialog({
             this bundle
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Label>Bundle Quantity</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Number of bundles to purchase</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center border rounded-md">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-none"
+              onClick={() => handleBundleQuantityChange(bundleQuantity - 1)}
+              disabled={bundleQuantity <= 1}
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="w-7 text-center text-sm">{bundleQuantity}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-none"
+              onClick={() => handleBundleQuantityChange(bundleQuantity + 1)}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
 
         {compatibilityWarnings.length > 0 && (
           <Alert variant="warning" className="mb-4">
@@ -234,10 +263,13 @@ export function BundleCustomizationDialog({
                                 <h4 className="font-medium text-sm">
                                   {item.name}
                                 </h4>
+                                <span className="text-sm text-muted-foreground">
+                                  Stock: {item.stock || 'N/A'}
+                                </span>
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {formatCurrency(item.price)} per unit
+                              Bundle component
                             </p>
 
                             <div className="mt-2 space-y-2">

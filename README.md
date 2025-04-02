@@ -51,14 +51,11 @@ Edit `.env` with your database credentials and other configuration.
 
 4. Initialize Prisma and sync database:
 ```bash
-# Pull existing database schema
-npm run prisma:pull
+# Pull existing database schema and generate client
+npm run db
 
-# Generate Prisma client
-npm run prisma:generate
-
-# Push schema changes to database (if needed)
-npm run prisma:push
+# Open Prisma Studio to view/edit data
+npm run studio
 ```
 
 5. Run the development server:
@@ -71,10 +68,10 @@ npm run dev
 ### Available Commands
 
 ```bash
-# Sync database schema and generate client
+# Pull database schema and generate client
 npm run db
 
-# Open database GUI
+# Open Prisma Studio GUI
 npm run studio
 ```
 

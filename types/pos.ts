@@ -32,6 +32,7 @@ export interface BundledItem {
   minQuantity: number
   maxQuantity: number
   optional: boolean
+  stock?: number
   variations?: ProductVariation[]
   selectedOptions?: Record<string, string>
 }
