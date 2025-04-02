@@ -182,6 +182,19 @@ export default async function POSPage() {
       FROM wp_woocommerce_bundled_itemmeta
       WHERE bundled_item_id IN (${bundledItemIds.join(',')})
     `
+
+    // Get stock information for bundled items
+    const bundledItemStock = await prisma.$queryRaw<Array<{
+      post_id: bigint
+      meta_value: string | null
+    }>>`
+      SELECT 
+        post_id,
+        meta_value
+      FROM wp_postmeta
+      WHERE post_id IN (${bundledItems.map(item => item.product_id).join(',')})
+      AND meta_key = '_stock'
+    `
     
     // Add metadata to bundled items
     bundledItemMetadata.forEach(meta => {
@@ -191,6 +204,18 @@ export default async function POSPage() {
         if (itemIndex >= 0 && meta.meta_key) {
           bundledItemsData[bundleId][itemIndex].child_meta[meta.meta_key] = meta.meta_value
         }
+      }
+    })
+
+    // Add stock information to bundled items
+    bundledItemStock.forEach(stockData => {
+      const productId = stockData.post_id
+      for (const bundleId in bundledItemsData) {
+        bundledItemsData[bundleId].forEach(item => {
+          if (item.product_id === productId) {
+            item.child_meta['_stock'] = stockData.meta_value
+          }
+        })
       }
     })
   }
@@ -217,6 +242,7 @@ export default async function POSPage() {
             visibility: item.child_meta['visibility'] || 'visible',
             discount: item.child_meta['discount'] || null,
             priceVisibility: item.child_meta['price_visibility'] || 'visible',
+            stock: Number(item.child_meta['_stock'] || 0),
             allMeta: item.child_meta
           }))
         : undefined
