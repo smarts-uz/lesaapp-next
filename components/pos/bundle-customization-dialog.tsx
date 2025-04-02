@@ -109,8 +109,7 @@ export function BundleCustomizationDialog({
   }, [customizedItems]);
 
   const calculateTotalPrice = (items: CustomizedBundleItem[]) => {
-    const totalPrice = product.price * bundleQuantity;
-    setTotalPrice(totalPrice);
+    setTotalPrice(product.price * bundleQuantity);
   };
 
   const handleBundleQuantityChange = (newQuantity: number) => {
