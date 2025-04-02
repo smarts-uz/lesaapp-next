@@ -5,21 +5,13 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  Tag,
-  Settings,
-  LogOut,
-  HardHat,
-} from "lucide-react";
+import { ShoppingCart, Package, LogOut, HardHat } from "lucide-react";
 
 const routes = [
   {
     label: "POS",
     icon: ShoppingCart,
-    href: "/dashboard/pos",
+    href: "/dashboard",
     color: "text-violet-500",
   },
   {

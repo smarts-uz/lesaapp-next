@@ -1,6 +1,6 @@
-import type { ReactNode } from "react"
-import Sidebar from "@/components/dashboard/sidebar"
-import Header from "@/components/dashboard/header"
+import type { ReactNode } from "react";
+import Sidebar from "@/components/dashboard/sidebar";
+import Header from "@/components/dashboard/header";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,6 +11,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
-  )
+  );
 }
-
