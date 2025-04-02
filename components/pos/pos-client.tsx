@@ -15,6 +15,15 @@ import { RefundButton } from "@/components/pos/refund-button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { CartItem as CartItemComponent } from "@/components/pos/cart-item"
 import { CartSummary } from "@/components/pos/cart-summary"
+import { createOrder } from "@/lib/woocommerce"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface POSClientProps {
   products: Product[]
@@ -42,6 +51,9 @@ export function POSClient({ products }: POSClientProps) {
     index: -1,
     open: false,
   })
+
+  const [orderComplete, setOrderComplete] = useState(false)
+  const [orderDetails, setOrderDetails] = useState<any>(null)
 
   // Set loading to false when products are available
   useEffect(() => {
@@ -266,15 +278,62 @@ export function POSClient({ products }: POSClientProps) {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0)
   }
 
-  const handleCheckout = () => {
-    // In a real implementation, this would create an order in WooCommerce
-    toast({
-      title: "Order created",
-      description: `Order total: ${formatCurrency(calculateTotal())}`,
-      duration: 3000,
-    })
-
-    setCart([])
+  const handleCheckout = async () => {
+    // Only proceed if cart has items
+    if (cart.length === 0) return;
+    
+    // Calculate totals
+    const subtotal = calculateTotal();
+    const taxAmount = subtotal * 0.1;
+    const total = subtotal + taxAmount;
+    
+    // Prepare order data
+    const orderData = {
+      items: cart.map(item => ({
+        product_id: item.id,
+        name: item.name,
+        sku: item.sku || '',
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * item.quantity,
+        type: item.type || 'simple',
+        bundleItems: item.bundleItems || [],
+        tax_amount: (item.price * item.quantity) * 0.1,
+      })),
+      subtotal,
+      tax_total: taxAmount,
+      total,
+      payment_method: "cash",
+      status: "processing"
+    };
+    
+    try {
+      // Create order in database
+      const order = await createOrder(orderData);
+      
+      // Set order details for confirmation dialog
+      setOrderDetails({
+        ...order,
+        items: orderData.items,
+        subtotal,
+        tax_total: taxAmount,
+        total
+      });
+      
+      // Show order completion dialog
+      setOrderComplete(true);
+      
+      // Clear cart after successful order
+      setCart([]);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create order. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
   }
 
   return (
@@ -399,6 +458,62 @@ export function POSClient({ products }: POSClientProps) {
           product={selectedBundle}
           onAddToCart={addBundleToCart}
         />
+      )}
+
+      {/* Order Confirmation Dialog */}
+      {orderDetails && (
+        <Dialog open={orderComplete} onOpenChange={setOrderComplete}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Order #{orderDetails.id} Created</DialogTitle>
+              <DialogDescription>
+                Order details have been successfully saved
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="border rounded-lg p-3 my-2">
+              <div className="text-sm space-y-1">
+                <p className="font-medium">Date: {new Date(orderDetails.date).toLocaleString()}</p>
+                <p className="font-medium">Status: {orderDetails.status}</p>
+                <p className="font-medium">Payment Method: {orderDetails.payment_method}</p>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-3 my-2">
+              <h4 className="font-semibold mb-2">Items</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {orderDetails.items.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between text-sm border-b pb-1">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-xs">{item.quantity} x {formatCurrency(item.price)}</p>
+                    </div>
+                    <p className="font-medium">{formatCurrency(item.total)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-3 my-2">
+              <div className="flex justify-between mb-1">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(orderDetails.subtotal)}</span>
+              </div>
+              <div className="flex justify-between mb-1">
+                <span className="text-muted-foreground">Tax</span>
+                <span>{formatCurrency(orderDetails.tax_total)}</span>
+              </div>
+              <div className="flex justify-between font-bold">
+                <span>Total</span>
+                <span>{formatCurrency(orderDetails.total)}</span>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button onClick={() => setOrderComplete(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )

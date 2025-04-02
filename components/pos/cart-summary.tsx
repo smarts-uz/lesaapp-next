@@ -20,23 +20,21 @@ export function CartSummary({ subtotal, onCheckout }: CartSummaryProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div className="flex gap-2 mb-2">
         <Button variant="outline" className="w-full">
           <Tag className="mr-2 h-4 w-4" />
           Discount
         </Button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" className="w-full">
           <Banknote className="mr-2 h-4 w-4" />
           Cash
         </Button>
-        <Button className="w-full" onClick={onCheckout}>
-          <CreditCard className="mr-2 h-4 w-4" />
-          Card
-        </Button>
       </div>
+      
+      <Button onClick={onCheckout} className="w-full">
+        <CreditCard className="mr-2 h-4 w-4" />
+        Checkout
+      </Button>
     </div>
   )
 } 
