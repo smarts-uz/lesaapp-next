@@ -8,11 +8,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Package } from "lucide-react";
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+  type?: string;
+  bundleItems?: any[];
+}
+
+interface OrderDetails {
+  id: string;
+  number: string;
+  date: string;
+  status: string;
+  payment_method: string;
+  items: OrderItem[];
+  subtotal: number;
+  tax_total: number;
+  total: number;
+}
 
 interface POSOrderConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orderDetails: any;
+  orderDetails: OrderDetails | null;
 }
 
 export function POSOrderConfirmationDialog({
@@ -26,7 +48,7 @@ export function POSOrderConfirmationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Order #{orderDetails.id} Created</DialogTitle>
+          <DialogTitle>Order {orderDetails.number} Created</DialogTitle>
           <DialogDescription>
             Order details have been successfully saved
           </DialogDescription>
@@ -47,16 +69,30 @@ export function POSOrderConfirmationDialog({
         <div className="border rounded-lg p-3 my-2">
           <h4 className="font-semibold mb-2">Items</h4>
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {orderDetails.items.map((item: any, index: number) => (
+            {orderDetails.items.map((item, index) => (
               <div
                 key={index}
                 className="flex justify-between text-sm border-b pb-1"
               >
                 <div>
-                  <p className="font-medium">{item.name}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="font-medium">{item.name}</p>
+                    {item.type === "bundle" && <Package className="h-3 w-3 text-blue-500" />}
+                  </div>
                   <p className="text-xs">
                     {item.quantity} x {formatCurrency(item.price)}
                   </p>
+                  {item.type === "bundle" && item.bundleItems && item.bundleItems.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1 pl-2 border-l-2">
+                      {item.bundleItems
+                        .filter((bundleItem) => bundleItem.quantity > 0)
+                        .map((bundleItem, idx) => (
+                          <div key={idx}>
+                            {bundleItem.name} x {bundleItem.quantity}
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
                 <p className="font-medium">{formatCurrency(item.total)}</p>
               </div>

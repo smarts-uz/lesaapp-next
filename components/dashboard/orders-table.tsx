@@ -37,9 +37,10 @@ import { Order } from "@/lib/prisma/orders";
 interface OrdersTableProps {
   status?: string;
   initialOrders: Order[];
+  onOrderClick?: (id: string) => void;
 }
 
-export function OrdersTable({ status, initialOrders }: OrdersTableProps) {
+export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [orders] = useState<Order[]>(initialOrders);
@@ -97,7 +98,11 @@ export function OrdersTable({ status, initialOrders }: OrdersTableProps) {
           <TableBody>
             {paginatedOrders.length > 0 ? (
               paginatedOrders.map((order) => (
-                <TableRow key={order.id} className="h-6">
+                <TableRow 
+                  key={order.id} 
+                  className="h-6 cursor-pointer hover:bg-muted/50"
+                  onClick={() => onOrderClick && onOrderClick(order.id)}
+                >
                   <TableCell className="py-0.5 text-sm font-medium">
                     <Link
                       href={`/dashboard/orders/${order.id}`}

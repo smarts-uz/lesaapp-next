@@ -17,6 +17,7 @@ interface POSCartSectionProps {
   editingBundleInCart: { index: number; open: boolean };
   subtotal: number;
   onCheckout: () => void;
+  isLoading?: boolean;
 }
 
 export function POSCartSection({
@@ -31,7 +32,8 @@ export function POSCartSection({
   expandedBundleItems,
   editingBundleInCart,
   subtotal,
-  onCheckout
+  onCheckout,
+  isLoading = false
 }: POSCartSectionProps) {
   return (
     <div className="w-1/3 h-full flex flex-col border rounded-lg bg-background">
@@ -71,6 +73,7 @@ export function POSCartSection({
           <CartSummary
             subtotal={subtotal}
             onCheckout={onCheckout}
+            isLoading={isLoading}
           />
         </>
       ) : (

@@ -34,6 +34,7 @@ export function POSClient({ products }: POSClientProps) {
 
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
   // Sort cart to prioritize bundles at the top
   useEffect(() => {
@@ -271,32 +272,58 @@ export function POSClient({ products }: POSClientProps) {
     // Only proceed if cart has items
     if (cart.length === 0) return;
 
-    // Calculate totals
-    const subtotal = calculateTotal();
-    const taxAmount = subtotal * 0.1;
-    const total = subtotal + taxAmount;
-
-    // Prepare order data
-    const orderData = {
-      items: cart.map((item) => ({
-        product_id: item.id,
-        name: item.name,
-        sku: item.sku || "",
-        price: item.price,
-        quantity: item.quantity,
-        total: item.price * item.quantity,
-        type: item.type || "simple",
-        bundleItems: item.bundleItems || [],
-        tax_amount: item.price * item.quantity * 0.1,
-      })),
-      subtotal,
-      tax_total: taxAmount,
-      total,
-      payment_method: "cash",
-      status: "processing",
-    };
+    setIsCheckoutLoading(true);
 
     try {
+      // Calculate totals
+      const subtotal = calculateTotal();
+      const taxAmount = subtotal * 0.1;
+      const total = subtotal + taxAmount;
+
+      // Prepare order data with properly formatted bundle items
+      const orderData = {
+        items: cart.map((item) => {
+          // Base item data
+          const itemData = {
+            product_id: item.id,
+            name: item.name,
+            sku: item.sku || "",
+            price: item.price,
+            quantity: item.quantity,
+            total: item.price * item.quantity,
+            type: item.type || "simple",
+            tax_amount: item.price * item.quantity * 0.1,
+          };
+          
+          // If this is a bundle, add the bundle items
+          if (item.type === "bundle" && item.bundleItems) {
+            // Filter out bundle items with zero quantity
+            const activeBundleItems = item.bundleItems.filter(bi => bi.quantity > 0);
+            
+            return {
+              ...itemData,
+              bundleItems: activeBundleItems.map(bundleItem => ({
+                id: bundleItem.id,
+                product_id: bundleItem.productId || bundleItem.id,
+                name: bundleItem.name,
+                price: bundleItem.price,
+                quantity: bundleItem.quantity,
+                total: bundleItem.price * bundleItem.quantity,
+                variation_id: 0, // Default to 0 if not specified
+                selectedOptions: bundleItem.selectedOptions || {}
+              }))
+            };
+          }
+          
+          return itemData;
+        }),
+        subtotal,
+        tax_total: taxAmount,
+        total,
+        payment_method: "cash",
+        status: "processing",
+      };
+
       // Create order in database
       const order = await createOrder(orderData);
 
@@ -322,6 +349,8 @@ export function POSClient({ products }: POSClientProps) {
         variant: "destructive",
         duration: 5000,
       });
+    } finally {
+      setIsCheckoutLoading(false);
     }
   };
 
@@ -350,6 +379,7 @@ export function POSClient({ products }: POSClientProps) {
           editingBundleInCart={editingBundleInCart}
           subtotal={calculateTotal()}
           onCheckout={handleCheckout}
+          isLoading={isCheckoutLoading}
         />
       </div>
 
