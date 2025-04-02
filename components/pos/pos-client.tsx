@@ -1,58 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, ShoppingCart, AlertCircle } from "lucide-react";
 import type { CartItem, CustomizedBundleItem, Product } from "@/types/pos";
-import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import { BundleCustomizationDialog } from "@/components/pos/bundle-customization-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RefundButton } from "@/components/pos/refund-button";
-import { ProductGrid } from "@/components/pos/product-grid";
-import { CartItem as CartItemComponent } from "@/components/pos/cart-item";
-import { CartSummary } from "@/components/pos/cart-summary";
 import { createOrder } from "@/lib/woocommerce";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+// Import the new components
+import { POSHeader } from "@/components/pos/pos-header";
+import { POSCompatibilityWarnings } from "@/components/pos/pos-compatibility-warnings";
+import { POSProductSection } from "@/components/pos/pos-product-section";
+import { POSCartSection } from "@/components/pos/pos-cart-section";
+import { POSOrderConfirmationDialog } from "@/components/pos/pos-order-confirmation-dialog";
 
 interface POSClientProps {
   products: Product[];
 }
 
 export function POSClient({ products }: POSClientProps) {
-  // Extract unique categories from product categories arrays
-  const categories = Array.from(
-    new Set(
-      products.flatMap((product) => product.categories)
-    )
-  );
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedBundle, setSelectedBundle] = useState<Product | null>(null);
   const [isBundleDialogOpen, setIsBundleDialogOpen] = useState(false);
-  const [editingCartItemIndex, setEditingCartItemIndex] = useState<
-    number | null
-  >(null);
-  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
-    []
-  );
-  const [expandedBundleItems, setExpandedBundleItems] = useState<
-    Record<string, boolean>
-  >({});
+  const [editingCartItemIndex, setEditingCartItemIndex] = useState<number | null>(null);
+  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
+  const [expandedBundleItems, setExpandedBundleItems] = useState<Record<string, boolean>>({});
   const [editingBundleInCart, setEditingBundleInCart] = useState<{
     index: number;
     open: boolean;
@@ -63,13 +34,6 @@ export function POSClient({ products }: POSClientProps) {
 
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderDetails, setOrderDetails] = useState<any>(null);
-
-  // Set loading to false when products are available
-  useEffect(() => {
-    if (products.length > 0) {
-      setIsLoading(false);
-    }
-  }, [products]);
 
   // Sort cart to prioritize bundles at the top
   useEffect(() => {
@@ -86,25 +50,6 @@ export function POSClient({ products }: POSClientProps) {
       }
     }
   }, [cart]);
-
-  // Filter products based on search query and active category
-  useEffect(() => {
-    let filtered = products;
-
-    if (searchQuery) {
-      filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (activeCategory !== "all") {
-      filtered = filtered.filter((product) =>
-        product.categories.includes(activeCategory)
-      );
-    }
-
-    setFilteredProducts(filtered);
-  }, [searchQuery, activeCategory, products]);
 
   // Check for compatibility warnings in the cart
   useEffect(() => {
@@ -382,128 +327,30 @@ export function POSClient({ products }: POSClientProps) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] gap-6">
-      {compatibilityWarnings.length > 0 && (
-        <Alert variant="warning">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Compatibility Warning</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc pl-4 mt-2">
-              {compatibilityWarnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Point of Sale</h1>
-        <div className="flex gap-2">
-          <RefundButton />
-        </div>
-      </div>
+      <POSCompatibilityWarnings warnings={compatibilityWarnings} />
+      
+      <POSHeader title="Point of Sale" />
 
       <div className="flex flex-1 gap-6 overflow-hidden">
-        {/* Products Section */}
-        <div className="flex flex-col w-2/3 h-full">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search scaffolding products..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+        <POSProductSection 
+          products={products} 
+          onAddToCart={addToCart} 
+        />
 
-          <Tabs defaultValue="all" className="flex-1 flex flex-col">
-            <TabsList className="mb-4 flex flex-wrap h-auto">
-              <TabsTrigger
-                value="all"
-                onClick={() => setActiveCategory("all")}
-                className="mb-1"
-              >
-                All
-              </TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger
-                  key={category}
-                  value={category}
-                  onClick={() => setActiveCategory(category)}
-                  className="mb-1"
-                >
-                  {category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value={activeCategory} className="flex-1 mt-0">
-              <ScrollArea className="h-[calc(100vh-16rem)]">
-                <ProductGrid
-                  products={filteredProducts}
-                  isLoading={isLoading}
-                  onAddToCart={addToCart}
-                />
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Cart Section */}
-        <div className="w-1/3 h-full flex flex-col border rounded-lg bg-background">
-          <div className="p-4 border-b">
-            <h2 className="text-xl font-bold flex items-center">
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Current Order
-            </h2>
-          </div>
-
-          {cart.length > 0 ? (
-            <>
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {cart.map((item, index) => (
-                    <CartItemComponent
-                      key={`${item.id}-${index}`}
-                      item={item}
-                      index={index}
-                      onUpdateQuantity={updateQuantity}
-                      onRemove={removeFromCart}
-                      onToggleBundleItems={toggleBundleItemsVisibility}
-                      onToggleBundleEditor={toggleInCartBundleEditor}
-                      onUpdateBundleItemQuantity={updateBundleItemQuantity}
-                      onUpdateBundleItemOption={updateBundleItemOption}
-                      onCloseBundleEditor={() =>
-                        setEditingBundleInCart({ index: -1, open: false })
-                      }
-                      isExpanded={expandedBundleItems[index]}
-                      isEditing={
-                        editingBundleInCart.index === index &&
-                        editingBundleInCart.open
-                      }
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-
-              <CartSummary
-                subtotal={calculateTotal()}
-                onCheckout={handleCheckout}
-              />
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">Your cart is empty</h3>
-              <p className="text-muted-foreground mt-1 mb-4">
-                Add scaffolding products by clicking on them in the product grid
-              </p>
-            </div>
-          )}
-        </div>
+        <POSCartSection
+          cart={cart}
+          onUpdateQuantity={updateQuantity}
+          onRemove={removeFromCart}
+          onToggleBundleItems={toggleBundleItemsVisibility}
+          onToggleBundleEditor={toggleInCartBundleEditor}
+          onUpdateBundleItemQuantity={updateBundleItemQuantity}
+          onUpdateBundleItemOption={updateBundleItemOption}
+          onCloseBundleEditor={() => setEditingBundleInCart({ index: -1, open: false })}
+          expandedBundleItems={expandedBundleItems}
+          editingBundleInCart={editingBundleInCart}
+          subtotal={calculateTotal()}
+          onCheckout={handleCheckout}
+        />
       </div>
 
       {/* Bundle Customization Dialog */}
@@ -518,69 +365,11 @@ export function POSClient({ products }: POSClientProps) {
       )}
 
       {/* Order Confirmation Dialog */}
-      {orderDetails && (
-        <Dialog open={orderComplete} onOpenChange={setOrderComplete}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Order #{orderDetails.id} Created</DialogTitle>
-              <DialogDescription>
-                Order details have been successfully saved
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="border rounded-lg p-3 my-2">
-              <div className="text-sm space-y-1">
-                <p className="font-medium">
-                  Date: {new Date(orderDetails.date).toLocaleString()}
-                </p>
-                <p className="font-medium">Status: {orderDetails.status}</p>
-                <p className="font-medium">
-                  Payment Method: {orderDetails.payment_method}
-                </p>
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-3 my-2">
-              <h4 className="font-semibold mb-2">Items</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {orderDetails.items.map((item: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex justify-between text-sm border-b pb-1"
-                  >
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-xs">
-                        {item.quantity} x {formatCurrency(item.price)}
-                      </p>
-                    </div>
-                    <p className="font-medium">{formatCurrency(item.total)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-3 my-2">
-              <div className="flex justify-between mb-1">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(orderDetails.subtotal)}</span>
-              </div>
-              <div className="flex justify-between mb-1">
-                <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(orderDetails.tax_total)}</span>
-              </div>
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>{formatCurrency(orderDetails.total)}</span>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button onClick={() => setOrderComplete(false)}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <POSOrderConfirmationDialog
+        open={orderComplete}
+        onOpenChange={setOrderComplete}
+        orderDetails={orderDetails}
+      />
     </div>
   );
 }
