@@ -196,6 +196,8 @@ export function BundleCustomizationDialog({
         return {
           ...item,
           quantity: item.defaultQuantity,
+          minQuantity: item.minQuantity || 1, // Ensure minQuantity is set from default or 1
+          maxQuantity: item.maxQuantity || 999, // Ensure maxQuantity is set from default or 999
           stock: simpleProduct?.stock || 0,
           selectedOptions:
             item.variations?.reduce((acc, variation) => {
