@@ -296,7 +296,7 @@ export function POSClient({ products }: POSClientProps) {
         price: item.price,
         quantity: item.quantity,
         total: item.price * item.quantity,
-        type: 'shop_order',
+        type: item.type || 'simple',
         bundleItems: item.bundleItems || [],
         tax_amount: (item.price * item.quantity) * 0.1,
       })),
