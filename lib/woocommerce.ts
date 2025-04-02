@@ -2,6 +2,10 @@
 // In a real application, this would use the WooCommerce REST API
 
 import type { Product, Order, RefundData } from "@/types/pos";
+// Remove Prisma import
+// import { createOrder as createOrderDB } from "./prisma/orders";
+// Import server action
+import { createOrderAction } from "./actions";
 
 export async function fetchProducts(): Promise<Product[]> {
   // Simulate API delay
@@ -601,16 +605,19 @@ export async function fetchProducts(): Promise<Product[]> {
 }
 
 export async function createOrder(orderData: any) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // In a real implementation, this would create an order in WooCommerce
-  return {
-    id: Math.floor(Math.random() * 1000) + 1,
-    ...orderData,
-    date: new Date().toISOString(),
-    status: "processing",
-  };
+  try {
+    // Use server action instead of direct Prisma call
+    const result = await createOrderAction(orderData);
+    
+    if (!result.success) {
+      throw new Error(result.error || "Failed to create order");
+    }
+    
+    return result.order;
+  } catch (error) {
+    console.error("Error creating order:", error);
+    throw error;
+  }
 }
 
 export async function fetchOrder(orderId: string): Promise<Order | null> {
@@ -657,6 +664,16 @@ export async function fetchOrder(orderId: string): Promise<Order | null> {
         total: 359.96,
         refundable: true,
         type: "simple",
+        order_id: parseInt(orderId),
+        product_id: 1,
+        variation_id: 0,
+        product_qty: 4,
+        product_net_revenue: 89.99,
+        product_gross_revenue: 359.96,
+        coupon_amount: 0,
+        tax_amount: 0,
+        shipping_amount: 0,
+        shipping_tax_amount: 0
       },
       {
         id: 2,
@@ -667,6 +684,16 @@ export async function fetchOrder(orderId: string): Promise<Order | null> {
         total: 213.0,
         refundable: true,
         type: "simple",
+        order_id: parseInt(orderId),
+        product_id: 2,
+        variation_id: 0,
+        product_qty: 6,
+        product_net_revenue: 35.5,
+        product_gross_revenue: 213.0,
+        coupon_amount: 0,
+        tax_amount: 0,
+        shipping_amount: 0,
+        shipping_tax_amount: 0
       },
       // ... other items
     ],

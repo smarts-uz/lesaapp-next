@@ -258,7 +258,6 @@ export default async function POSPage() {
         allMeta: product.meta
       }
     })
-    console.log(constructionProducts)
   return <POSClient products={constructionProducts} />
 }
 
