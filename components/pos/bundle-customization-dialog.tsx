@@ -307,9 +307,6 @@ export function BundleCustomizationDialog({
         <DialogFooter className="flex flex-col sm:flex-row gap-3 items-center pt-4 border-t mt-4">
           <div className="text-lg font-bold mr-auto">
             Total: {formatCurrency(totalPrice)}
-            <span className="text-xs text-muted-foreground ml-2">
-              (10% bundle discount applied)
-            </span>
           </div>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
