@@ -20,8 +20,24 @@ const nextConfig = {
   experimental: {
     serverActions: true,
   },
+  // Add redirects configuration for dashboard paths
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/en/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/dashboard/:path*',
+        destination: '/en/dashboard/:path*',
+        permanent: false,
+      }
+    ]
+  },
 }
 
+// Carefully merge user config while preserving our redirects
 mergeConfig(nextConfig, userConfig)
 
 function mergeConfig(nextConfig, userConfig) {
@@ -30,6 +46,9 @@ function mergeConfig(nextConfig, userConfig) {
   }
 
   for (const key in userConfig) {
+    // Skip redirects to avoid overwriting our dashboard redirects
+    if (key === 'redirects') continue;
+    
     if (
       typeof nextConfig[key] === 'object' &&
       !Array.isArray(nextConfig[key])

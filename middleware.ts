@@ -36,6 +36,19 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // Handle direct dashboard access - ensure it goes to localized dashboard
+    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+      const locale = getLocale(request);
+      
+      // Extract any path after '/dashboard'
+      const dashboardPath = pathname === '/dashboard' ? '' : pathname.substring('/dashboard'.length);
+      
+      // Build the localized dashboard URL
+      const newUrl = new URL(`/${locale}/dashboard${dashboardPath}`, request.url);
+      
+      return NextResponse.redirect(newUrl);
+    }
+
     // Check if the pathname already has a locale
     const pathnameHasLocale = locales.some(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
