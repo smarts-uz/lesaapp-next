@@ -193,6 +193,12 @@ The queries now properly fetch all the necessary information while maintaining t
 
 ---
 
+_**User**_
+
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/orders".
+
+---
+
 
 
 ---
