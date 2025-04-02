@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import Image from "next/image"
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -15,16 +15,25 @@ export default function Home() {
               height={32}
               className="rounded-md"
             />
-            <span className="font-bold text-xl">OpenPOS</span>
+            <span className="font-bold text-xl">LesaPOS</span>
           </div>
           <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">
-            <a href="#features" className="text-sm font-medium transition-colors hover:text-primary">
+            <a
+              href="#features"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
               Features
             </a>
-            <a href="#about" className="text-sm font-medium transition-colors hover:text-primary">
+            <a
+              href="#about"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
               About
             </a>
-            <a href="#contact" className="text-sm font-medium transition-colors hover:text-primary">
+            <a
+              href="#contact"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
               Contact
             </a>
           </nav>
@@ -48,8 +57,8 @@ export default function Home() {
                     Professional Point of Sale System
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Seamlessly manage your store with our WooCommerce-integrated POS system. Handle sales, bookings, and
-                    discounts with ease.
+                    Seamlessly manage your store with our WooCommerce-integrated
+                    POS system. Handle sales, bookings, and discounts with ease.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -81,7 +90,9 @@ export default function Home() {
           <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Powerful Features</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                  Powerful Features
+                </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Everything you need to run your business efficiently
                 </p>
@@ -89,10 +100,17 @@ export default function Home() {
             </div>
             <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 mt-12">
               {features.map((feature) => (
-                <div key={feature.title} className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                  <div className="rounded-full bg-primary/10 p-2">{feature.icon}</div>
+                <div
+                  key={feature.title}
+                  className="flex flex-col items-center space-y-4 rounded-lg border p-6"
+                >
+                  <div className="rounded-full bg-primary/10 p-2">
+                    {feature.icon}
+                  </div>
                   <h3 className="text-xl font-bold">{feature.title}</h3>
-                  <p className="text-center text-muted-foreground">{feature.description}</p>
+                  <p className="text-center text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -105,26 +123,36 @@ export default function Home() {
             © 2025 OpenPOS. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <a
+              href="#"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Terms
             </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <a
+              href="#"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Privacy
             </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <a
+              href="#"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Contact
             </a>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
 const features = [
   {
     title: "Point of Sale",
-    description: "Fast and intuitive POS interface for quick checkout and sales processing.",
+    description:
+      "Fast and intuitive POS interface for quick checkout and sales processing.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -146,7 +174,8 @@ const features = [
   },
   {
     title: "Order Management",
-    description: "Create, view, and process refunds with detailed item selection and reason tracking.",
+    description:
+      "Create, view, and process refunds with detailed item selection and reason tracking.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -170,7 +199,8 @@ const features = [
   },
   {
     title: "Booking System",
-    description: "Schedule appointments and services for both simple and bundled products.",
+    description:
+      "Schedule appointments and services for both simple and bundled products.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -199,7 +229,8 @@ const features = [
   },
   {
     title: "Discount System",
-    description: "Set time-based discounts for specific days or periods with flexible pricing options.",
+    description:
+      "Set time-based discounts for specific days or periods with flexible pricing options.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +253,8 @@ const features = [
   },
   {
     title: "WooCommerce Integration",
-    description: "Seamless synchronization with your WooCommerce store for products and inventory.",
+    description:
+      "Seamless synchronization with your WooCommerce store for products and inventory.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -244,7 +276,8 @@ const features = [
   },
   {
     title: "Analytics & Reporting",
-    description: "Comprehensive reports and insights to track sales, bookings, and business performance.",
+    description:
+      "Comprehensive reports and insights to track sales, bookings, and business performance.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -263,5 +296,4 @@ const features = [
       </svg>
     ),
   },
-]
-
+];

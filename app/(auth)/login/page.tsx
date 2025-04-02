@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HardHat } from "lucide-react";
-import Image from "next/image";
+import Link from "next/link";
 
 import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
 import { Button } from "@/components/ui/button";
@@ -39,12 +39,12 @@ export default function LoginPage() {
       // TODO: Implement actual login logic here
       // For now, we'll just simulate a successful login
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       toast({
         title: "Success",
         description: "You have been logged in successfully.",
       });
-      
+
       router.push("/dashboard");
     } catch (error) {
       toast({
@@ -62,16 +62,10 @@ export default function LoginPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-zinc-900" />
         <div className="relative z-20 flex items-center text-lg font-medium">
-          <HardHat className="mr-2 h-6 w-6" />
-          ScaffoldPOS
-        </div>
-        <div className="relative z-20 mt-auto">
-          <blockquote className="space-y-2">
-            <p className="text-lg">
-              "This platform has transformed how we manage our business. The interface is intuitive and the features are exactly what we needed."
-            </p>
-            <footer className="text-sm">Sofia Davis, CEO</footer>
-          </blockquote>
+          <Link href={"/"} className="flex items-center">
+            <HardHat className="mr-2 h-6 w-6" />
+            LesaPOS
+          </Link>
         </div>
       </div>
       <div className="lg:p-8">
@@ -132,4 +126,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}

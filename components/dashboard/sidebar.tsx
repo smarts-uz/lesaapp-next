@@ -33,7 +33,7 @@ export default function Sidebar() {
           className="flex items-center gap-2 font-semibold"
         >
           <HardHat className="h-6 w-6" />
-          <span>ScaffoldPOS</span>
+          <span>LesaPOS</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-3 py-2">
@@ -58,7 +58,7 @@ export default function Sidebar() {
       </ScrollArea>
       <div className="mt-auto border-t p-3">
         <Button variant="ghost" className="w-full justify-start" asChild>
-          <Link href="/">
+          <Link href="/login">
             <LogOut className="mr-2 h-5 w-5" />
             Log out
           </Link>

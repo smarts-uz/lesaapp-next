@@ -15,6 +15,7 @@ export default async function POSPage() {
       meta_key: string | null;
       meta_value: string | null;
       is_bundle: number | null;
+      image_url: string | null;
     }>
   >`
     SELECT 
@@ -27,13 +28,16 @@ export default async function POSPage() {
       p.post_modified,
       pm.meta_key, 
       pm.meta_value,
-      COUNT(wbi.bundle_id) as is_bundle
+      COUNT(wbi.bundle_id) as is_bundle,
+      img.guid as image_url
     FROM wp_posts p
     LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
     LEFT JOIN wp_woocommerce_bundled_items wbi ON p.ID = wbi.bundle_id
+    LEFT JOIN wp_postmeta thumb ON p.ID = thumb.post_id AND thumb.meta_key = '_thumbnail_id'
+    LEFT JOIN wp_posts img ON thumb.meta_value = img.ID
     WHERE p.post_type = 'product'
     AND p.post_status = 'publish'
-    GROUP BY p.ID, p.post_title, p.post_content, p.post_excerpt, p.post_name, p.post_date, p.post_modified, pm.meta_key, pm.meta_value
+    GROUP BY p.ID, p.post_title, p.post_content, p.post_excerpt, p.post_name, p.post_date, p.post_modified, pm.meta_key, pm.meta_value, img.guid
   `;
 
   // Group the metadata for each product
@@ -51,6 +55,7 @@ export default async function POSPage() {
           post_modified: curr.post_modified,
           meta: {},
           is_bundle: curr.is_bundle ? curr.is_bundle > 0 : false,
+          image_url: curr.image_url,
         };
       }
       if (curr.meta_key) {
@@ -70,6 +75,7 @@ export default async function POSPage() {
         post_modified: Date;
         meta: Record<string, string | undefined>;
         is_bundle: boolean;
+        image_url: string | null;
       }
     >
   );
@@ -217,6 +223,35 @@ export default async function POSPage() {
         }
       }
     });
+
+    // Get stock information for bundled items
+    const bundledItemStock = await prisma.$queryRaw<
+      Array<{
+        product_id: bigint;
+        meta_value: string | null;
+      }>
+    >`
+      SELECT 
+        post_id as product_id,
+        meta_value
+      FROM wp_postmeta
+      WHERE post_id IN (${bundledItems
+        .map((item) => item.product_id)
+        .join(",")})
+      AND meta_key = '_stock'
+    `;
+
+    // Add stock information to bundled items
+    bundledItemStock.forEach((stockData) => {
+      const productId = stockData.product_id;
+      for (const bundleId in bundledItemsData) {
+        bundledItemsData[bundleId].forEach((item) => {
+          if (item.product_id === productId) {
+            item.child_meta["_stock"] = stockData.meta_value;
+          }
+        });
+      }
+    });
   }
 
   // Create final product structure with all data
@@ -244,6 +279,7 @@ export default async function POSPage() {
             visibility: item.child_meta["visibility"] || "visible",
             discount: item.child_meta["discount"] || null,
             priceVisibility: item.child_meta["price_visibility"] || "visible",
+            stock: Number(item.child_meta["_stock"] || 0),
             allMeta: item.child_meta,
           }))
         : undefined;
@@ -284,6 +320,7 @@ export default async function POSPage() {
       type: isBundle ? ("bundle" as const) : ("simple" as const),
       bundledItems,
       allMeta: product.meta,
+      image: product.image_url || "/placeholder.svg?height=200&width=200",
     };
   });
   console.log(constructionProducts);

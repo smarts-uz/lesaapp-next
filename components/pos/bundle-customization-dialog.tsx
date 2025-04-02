@@ -28,6 +28,7 @@ interface BundleCustomizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product;
+  allProducts: Product[];
   onAddToCart: (
     product: Product,
     customizedItems: CustomizedBundleItem[]
@@ -38,6 +39,7 @@ export function BundleCustomizationDialog({
   open,
   onOpenChange,
   product,
+  allProducts,
   onAddToCart,
 }: BundleCustomizationDialogProps) {
   const [customizedItems, setCustomizedItems] = useState<
@@ -49,23 +51,39 @@ export function BundleCustomizationDialog({
     []
   );
 
+  // Reset state function
+  const resetState = () => {
+    setBundleQuantity(1);
+    setTotalPrice(product.price);
+    setCompatibilityWarnings([]);
+  };
+
   // Initialize customized items when the dialog opens
   useEffect(() => {
     if (open && product.bundledItems) {
-      const initialItems = product.bundledItems.map((item) => ({
-        ...item,
-        quantity: item.defaultQuantity,
-        selectedOptions:
-          item.variations?.reduce((acc, variation) => {
-            acc[variation.name] = variation.options[0];
-            return acc;
-          }, {} as Record<string, string>) || {},
-      }));
+      const initialItems = product.bundledItems.map((item) => {
+        // Find the corresponding simple product to get stock information
+        const simpleProduct = allProducts.find((p) => p.id === item.productId);
+
+        return {
+          ...item,
+          quantity: item.defaultQuantity,
+          stock: simpleProduct?.stock || 0,
+          selectedOptions:
+            item.variations?.reduce((acc, variation) => {
+              acc[variation.name] = variation.options[0];
+              return acc;
+            }, {} as Record<string, string>) || {},
+        };
+      });
 
       setCustomizedItems(initialItems);
       calculateTotalPrice(initialItems);
+    } else if (!open) {
+      // Reset state when dialog is closed
+      resetState();
     }
-  }, [open, product]);
+  }, [open, product, allProducts]);
 
   // Check for compatibility warnings
   useEffect(() => {
@@ -116,6 +134,27 @@ export function BundleCustomizationDialog({
     if (newQuantity < 1) newQuantity = 1;
     setBundleQuantity(newQuantity);
     setTotalPrice(product.price * newQuantity);
+    
+    // Update bundled items quantities proportionally
+    const updatedItems = customizedItems.map(item => {
+      // Calculate the ratio of the new quantity to the current bundle quantity
+      const ratio = newQuantity / bundleQuantity;
+      // Calculate the new quantity for this item, maintaining the same ratio
+      const newItemQuantity = Math.round(item.quantity * ratio);
+      
+      // Ensure the new quantity is within the min/max limits
+      const validQuantity = Math.max(
+        item.minQuantity,
+        Math.min(newItemQuantity, item.maxQuantity)
+      );
+      
+      return {
+        ...item,
+        quantity: validQuantity
+      };
+    });
+    
+    setCustomizedItems(updatedItems);
   };
 
   const handleQuantityChange = (itemId: number, newQuantity: number) => {
@@ -126,27 +165,6 @@ export function BundleCustomizationDialog({
     const updatedItems = customizedItems.map((i) =>
       i.id === itemId ? { ...i, quantity: newQuantity } : i
     );
-    setCustomizedItems(updatedItems);
-  };
-
-  const handleOptionChange = (
-    itemId: number,
-    optionName: string,
-    optionValue: string
-  ) => {
-    const updatedItems = customizedItems.map((item) => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          selectedOptions: {
-            ...item.selectedOptions,
-            [optionName]: optionValue,
-          },
-        };
-      }
-      return item;
-    });
-
     setCustomizedItems(updatedItems);
   };
 
@@ -161,6 +179,11 @@ export function BundleCustomizationDialog({
     };
 
     onAddToCart(updatedProduct, finalItems);
+    
+    // Reset state
+    resetState();
+    
+    // Close the dialog
     onOpenChange(false);
   };
 
@@ -262,8 +285,8 @@ export function BundleCustomizationDialog({
                                 <h4 className="font-medium text-sm">
                                   {item.name}
                                 </h4>
-                                <span className="text-sm text-muted-foreground">
-                                  Stock: {item.stock || 'N/A'}
+                                <span className="text-sm  text-muted-foreground">
+                                  Stock: {item.stock}
                                 </span>
                               </div>
                             </div>
@@ -342,11 +365,7 @@ export function BundleCustomizationDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </Button>
+          <Button onClick={handleAddToCart}>Add to Cart</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

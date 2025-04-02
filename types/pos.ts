@@ -32,7 +32,7 @@ export interface BundledItem {
   minQuantity: number
   maxQuantity: number
   optional: boolean
-  stock?: number
+  stock?: number | null
   variations?: ProductVariation[]
   selectedOptions?: Record<string, string>
 }
@@ -45,6 +45,7 @@ export interface CartItem extends Product {
 export interface CustomizedBundleItem extends BundledItem {
   quantity: number
   selectedOptions?: Record<string, string>
+  stock?: number | null
 }
 
 export interface Order {

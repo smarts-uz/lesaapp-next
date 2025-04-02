@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+      "cursor-rules-mcp": {
+          "command": "npx",
+          "args": [
+              "-y",
+              "cursor-rules-mcp"
+          ]
+      }
+  }
+}

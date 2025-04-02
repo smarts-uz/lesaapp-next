@@ -60,9 +60,7 @@ export function ProductGrid({ products, isLoading, onAddToCart }: ProductGridPro
               </div>
               <div className="flex items-center justify-between mt-1">
                 <span className="font-bold">{formatCurrency(product.price)}</span>
-                {product.stock <= 5 && (
-                  <span className="text-xs text-muted-foreground">{product.stock} left</span>
-                )}
+                <span className="text-xs text-muted-foreground">{product.stock} left</span>
               </div>
             </div>
           </CardContent>
