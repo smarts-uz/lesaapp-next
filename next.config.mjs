@@ -7,20 +7,19 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  reactStrictMode: true,
   images: {
-    unoptimized: true,
+    domains: ['placeholder.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'ru', 'uz'],
-    localeDetection: true,
-  }
+  experimental: {
+    serverActions: true,
+  },
 }
 
 mergeConfig(nextConfig, userConfig)

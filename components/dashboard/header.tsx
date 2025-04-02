@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,20 +14,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import ReactCountryFlag from "react-country-flag";
-
-const languages = [
-  { code: "en", name: "English", countryCode: "GB" },
-  { code: "ru", name: "Русский", countryCode: "RU" },
-  { code: "uz", name: "O'zbek", countryCode: "UZ" },
-];
+import LanguageSwitcher from "@/components/language-switcher";
+import { useTranslation } from "react-i18next";
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
-  const [selectedLang, setSelectedLang] = useState("en");
   const [mounted, setMounted] = useState(false);
+  const { t } = useTranslation();
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -38,52 +33,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-6">
       <div className="ml-auto flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost">
-              {languages.find((lang) => lang.code === selectedLang) && (
-                <div className="flex items-center w-12 gap-2">
-                  <ReactCountryFlag
-                    countryCode={
-                      languages.find((lang) => lang.code === selectedLang)
-                        ?.countryCode || "EN"
-                    }
-                    svg
-                    style={{
-                      width: "1.5rem",
-                      height: "1.5rem",
-                      borderRadius: "0.375rem",
-                    }}
-                  />
-                  <span className="text-sm font-medium">
-                    {selectedLang.toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {languages.map((lang) => (
-              <DropdownMenuItem
-                key={lang.code}
-                onClick={() => setSelectedLang(lang.code)}
-              >
-                <div className="mr-2">
-                  <ReactCountryFlag
-                    countryCode={lang.countryCode}
-                    svg
-                    style={{
-                      width: "1.5rem",
-                      height: "1.5rem",
-                      borderRadius: "0.375rem",
-                    }}
-                  />
-                </div>
-                {lang.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LanguageSwitcher />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild className="">
@@ -98,11 +48,11 @@ export default function Header() {
           <DropdownMenuContent align="center" className="mt-1">
             <DropdownMenuItem onClick={() => setTheme("light")}>
               <Sun className="mr-2 size-6" />
-              Light
+              {t("theme.light", "Light")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("dark")}>
               <Moon className="mr-2 size-6" />
-              Dark
+              {t("theme.dark", "Dark")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -113,7 +63,7 @@ export default function Header() {
               <Avatar className="h-8 w-8">
                 <AvatarImage
                   src="/placeholder.svg?height=32&width=32"
-                  alt="User"
+                  alt={t("user", "User")}
                 />
                 <AvatarFallback>AD</AvatarFallback>
               </Avatar>
@@ -122,7 +72,7 @@ export default function Header() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Admin User</p>
+                <p className="text-sm font-medium leading-none">{t("adminUser", "Admin User")}</p>
                 <p className="text-xs leading-none text-muted-foreground">
                   admin@example.com
                 </p>
@@ -131,10 +81,10 @@ export default function Header() {
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+              <span>{t("profile", "Profile")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem>{t("logout", "Log out")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
