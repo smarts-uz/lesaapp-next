@@ -1,0 +1,56 @@
+{
+  "button": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "close": "Close",
+    "open": "Open",
+    "apply": "Apply",
+    "reset": "Reset",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "form": {
+    "required": "Required",
+    "optional": "Optional",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "address": "Address",
+    "city": "City",
+    "country": "Country",
+    "postalCode": "Postal Code",
+    "phoneNumber": "Phone Number"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "passwordMatch": "Passwords must match",
+    "minLength": "Must be at least {{count}} characters",
+    "maxLength": "Must be no more than {{count}} characters"
+  },
+  "dialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "areYouSure": "Are you sure?",
+    "thisCannotBeUndone": "This action cannot be undone."
+  },
+  "table": {
+    "noResults": "No results found",
+    "loading": "Loading...",
+    "rowsPerPage": "Rows per page",
+    "of": "of",
+    "page": "Page"
+  }
+} 
