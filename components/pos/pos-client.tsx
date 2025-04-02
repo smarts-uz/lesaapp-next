@@ -296,15 +296,16 @@ export function POSClient({ products }: POSClientProps) {
         price: item.price,
         quantity: item.quantity,
         total: item.price * item.quantity,
-        type: item.type || 'simple',
+        type: 'shop_order',
         bundleItems: item.bundleItems || [],
         tax_amount: (item.price * item.quantity) * 0.1,
       })),
       subtotal,
+      parent_order_id:0,
       tax_total: taxAmount,
       total,
       payment_method: "cash",
-      status: "processing"
+      status: "wc-processing"
     };
     
     try {
