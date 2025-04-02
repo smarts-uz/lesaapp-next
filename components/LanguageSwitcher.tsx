@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '../src/i18n/navigation';
+import { useRouter, usePathname } from '../i18n/navigation';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
