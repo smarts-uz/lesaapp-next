@@ -267,7 +267,7 @@ function processRefunds(orderRefunds: any[], orderId: number, totalAmount: numbe
  * @param items The order items
  * @returns An array of compatibility warnings
  */
-function checkCompatibilityWarnings(items: any[]): string[] {
+export function checkCompatibilityWarnings(items: any[]): string[] {
   const compatibilityWarnings: string[] = [];
   
   // Example compatibility check (in a real app, this would be more sophisticated)

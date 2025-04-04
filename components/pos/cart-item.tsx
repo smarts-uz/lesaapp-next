@@ -7,14 +7,11 @@ import { Package, Plus, Minus, Edit, ChevronUp, ChevronDown, Trash2 } from "luci
 import Image from "next/image"
 import type { CartItem } from "@/types/pos"
 import { formatCurrency } from "@/lib/utils"
-import { InCartBundleEditor } from "./in-cart-bundle-editor"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Label } from "@/components/ui/label"
+import { QuantityControl } from "./bundle-customization-dialog"
 
-const calculateItemTotal = (item: CartItem) => {
-  if (item.type === "bundle") {
-    return item.price * item.quantity;
-  }
-  return item.price * item.quantity;
-}
+const calculateItemTotal = (item: CartItem) => item.price * item.quantity;
 
 interface CartItemProps {
   item: CartItem
@@ -60,25 +57,41 @@ export function CartItem({
             {item.type === "bundle" && <Package className="h-3 w-3 text-blue-500" />}
           </div>
           <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-none"
-                onClick={() => onUpdateQuantity(index, item.quantity - 1)}
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
-              <span className="w-8 text-center">{item.quantity}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-none"
-                onClick={() => onUpdateQuantity(index, item.quantity + 1)}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
+            <QuantityControl
+              quantity={item.quantity}
+              minQuantity={1}
+              maxQuantity={999}
+              onQuantityChange={(newQuantity) => {
+                if (item.type === "bundle" && item.bundleItems) {
+                  // Calculate the ratio of the new quantity to the current quantity
+                  const ratio = newQuantity / item.quantity;
+                  
+                  // Update bundle items quantities proportionally
+                  const updatedBundleItems = item.bundleItems.map(bundleItem => {
+                    // Calculate the new quantity for this item
+                    const newItemQuantity = Math.round(bundleItem.quantity * ratio);
+                    
+                    // Ensure the new quantity is within min/max limits
+                    const validQuantity = Math.max(
+                      bundleItem.minQuantity,
+                      Math.min(newItemQuantity, bundleItem.maxQuantity)
+                    );
+                    
+                    // Update bundle item quantity
+                    onUpdateBundleItemQuantity(index, bundleItem.id, validQuantity);
+                    
+                    return {
+                      ...bundleItem,
+                      quantity: validQuantity
+                    };
+                  });
+                }
+                
+                // Update main item quantity
+                onUpdateQuantity(index, newQuantity);
+              }}
+              size="sm"
+            />
             <div className="flex items-center gap-1">
               <span className="text-sm text-muted-foreground">{formatCurrency(item.price)}</span>
               <span className="text-sm">x{item.quantity}</span>
@@ -153,16 +166,70 @@ export function CartItem({
       )}
 
       {item.type === "bundle" && isEditing && (
-        <InCartBundleEditor
-          bundle={item}
-          onUpdateQuantity={(bundleItemId, quantity) =>
-            onUpdateBundleItemQuantity(index, bundleItemId, quantity)
-          }
-          onUpdateOption={(bundleItemId, optionName, optionValue) =>
-            onUpdateBundleItemOption(index, bundleItemId, optionName, optionValue)
-          }
-          onClose={onCloseBundleEditor}
-        />
+        <div className="border rounded-lg p-4 mt-2 bg-muted/20">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Edit Bundle Components</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onCloseBundleEditor}
+              >
+                Done
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-4 pr-4">
+                {item.bundleItems?.map((bundleItem) => (
+                  <div key={bundleItem.id} className="flex items-start gap-3 pb-4 border-b last:border-b-0">
+                    <div className="h-16 w-16 relative rounded overflow-hidden flex-shrink-0">
+                      <Image
+                        src={bundleItem.image || "/placeholder.svg?height=64&width=64"}
+                        alt={bundleItem.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">{bundleItem.name}</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Bundle component</p>
+
+                      <div className="mt-2">
+                        <QuantityControl
+                          quantity={bundleItem.quantity}
+                          minQuantity={1}
+                          maxQuantity={bundleItem.maxQuantity * item.quantity}
+                          onQuantityChange={(newQuantity) => 
+                            onUpdateBundleItemQuantity(index, bundleItem.id, newQuantity)
+                          }
+                          label="Quantity"
+                          tooltipContent={`Min: ${bundleItem.minQuantity * item.quantity}, Max: ${bundleItem.maxQuantity * item.quantity}`}
+                          size="sm"
+                        />
+                      </div>
+
+                      {bundleItem.selectedOptions && 
+                        Object.entries(bundleItem.selectedOptions).length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {Object.entries(bundleItem.selectedOptions).map(([key, value]) => (
+                              <div key={key} className="flex items-center gap-2">
+                                <Label className="text-xs">{key}:</Label>
+                                <span className="text-xs font-medium">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
       )}
 
       <Separator />

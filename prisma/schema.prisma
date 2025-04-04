@@ -92,18 +92,6 @@ model wp_comments {
   @@index([comment_type], map: "woo_idx_comment_type")
 }
 
-model wp_duplicator_packages {
-  id      BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  name    String   @db.VarChar(250)
-  hash    String   @db.VarChar(50)
-  status  Int
-  created DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
-  owner   String   @db.VarChar(60)
-  package String   @db.LongText
-
-  @@index([hash], map: "hash")
-}
-
 model wp_links {
   link_id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   link_url         String   @default("") @db.VarChar(255)

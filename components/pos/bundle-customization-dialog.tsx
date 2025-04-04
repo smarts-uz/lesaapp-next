@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, Info, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import type { CustomizedBundleItem, Product } from "@/types/pos";
+import type { CustomizedBundleItem, Product, CartItem } from "@/types/pos";
 import { formatCurrency } from "@/lib/utils";
 import {
   Tooltip,
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-interface BundleCustomizationDialogProps {
+export interface BundleCustomizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product;
@@ -33,26 +33,53 @@ interface BundleCustomizationDialogProps {
     product: Product,
     customizedItems: CustomizedBundleItem[]
   ) => void;
+  isEditing?: boolean;
+  initialQuantity?: number;
 }
 
 // Quantity control component for reusability
-interface QuantityControlProps {
+export interface QuantityControlProps {
   quantity: number;
   minQuantity: number;
   maxQuantity: number;
   onQuantityChange: (newQuantity: number) => void;
   label?: string;
   tooltipContent?: string;
+  size?: 'default' | 'sm';
 }
 
-function QuantityControl({
+export function QuantityControl({
   quantity,
   minQuantity,
   maxQuantity,
   onQuantityChange,
   label,
   tooltipContent,
+  size = 'default'
 }: QuantityControlProps) {
+  const buttonSize = size === 'sm' ? 'h-6 w-6' : 'h-7 w-7';
+  const textSize = size === 'sm' ? 'text-xs' : 'text-sm';
+  const inputWidth = size === 'sm' ? 'w-12' : 'w-16';
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value)) {
+      // Ensure the value is within bounds
+      const newValue = Math.max(minQuantity, Math.min(value, maxQuantity));
+      onQuantityChange(newValue);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow only numbers, backspace, delete, and arrow keys
+    if (
+      !/[\d\b]/.test(e.key) && 
+      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
+    ) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div className="flex items-center justify-between">
       {label && (
@@ -76,17 +103,25 @@ function QuantityControl({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 rounded-none"
+          className={`${buttonSize} rounded-none`}
           onClick={() => onQuantityChange(quantity - 1)}
           disabled={quantity <= minQuantity}
         >
           <Minus className="h-3 w-3" />
         </Button>
-        <span className="w-7 text-center text-sm">{quantity}</span>
+        <input
+          type="text"
+          value={quantity}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          className={`${inputWidth} text-center ${textSize} border-none focus:outline-none focus:ring-0`}
+          min={minQuantity}
+          max={maxQuantity}
+        />
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 rounded-none"
+          className={`${buttonSize} rounded-none`}
           onClick={() => onQuantityChange(quantity + 1)}
           disabled={quantity >= maxQuantity}
         >
@@ -172,9 +207,11 @@ export function BundleCustomizationDialog({
   product,
   allProducts,
   onAddToCart,
+  isEditing = false,
+  initialQuantity = 1,
 }: BundleCustomizationDialogProps) {
   const [customizedItems, setCustomizedItems] = useState<CustomizedBundleItem[]>([]);
-  const [bundleQuantity, setBundleQuantity] = useState(1);
+  const [bundleQuantity, setBundleQuantity] = useState(initialQuantity);
   const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
   
   // Calculate total price based on bundle quantity
@@ -182,78 +219,46 @@ export function BundleCustomizationDialog({
 
   // Reset state function
   const resetState = useCallback(() => {
-    setBundleQuantity(1);
+    setBundleQuantity(initialQuantity);
     setCompatibilityWarnings([]);
-  }, []);
+  }, [initialQuantity]);
 
   // Initialize customized items when the dialog opens
   useEffect(() => {
-    if (open && product.bundledItems) {
-      const initialItems = product.bundledItems.map((item) => {
-        // Find the corresponding simple product to get stock information
-        const simpleProduct = allProducts.find((p) => p.id === item.productId);
+    if (open) {
+      let initialItems: CustomizedBundleItem[] = [];
+      const cartItem = product as CartItem;
+      
+      if (isEditing && cartItem.bundleItems) {
+        // Use existing bundle items when editing
+        initialItems = cartItem.bundleItems;
+        setBundleQuantity(cartItem.quantity);
+      } else if (product.bundledItems) {
+        // Create new bundle items
+        initialItems = product.bundledItems.map((item) => {
+          // Find the corresponding simple product to get stock information
+          const simpleProduct = allProducts.find((p) => p.id === item.productId);
 
-        return {
-          ...item,
-          quantity: item.defaultQuantity,
-          minQuantity: item.minQuantity || 1, // Ensure minQuantity is set from default or 1
-          maxQuantity: item.maxQuantity || 999, // Ensure maxQuantity is set from default or 999
-          stock: simpleProduct?.stock || 0,
-          selectedOptions:
-            item.variations?.reduce((acc, variation) => {
-              acc[variation.name] = variation.options[0];
-              return acc;
-            }, {} as Record<string, string>) || {},
-        };
-      });
+          return {
+            ...item,
+            quantity: item.defaultQuantity,
+            minQuantity: item.minQuantity || 1,
+            maxQuantity: item.maxQuantity || 999,
+            stock: simpleProduct?.stock || 0,
+            selectedOptions:
+              item.variations?.reduce((acc, variation) => {
+                acc[variation.name] = variation.options[0];
+                return acc;
+              }, {} as Record<string, string>) || {},
+          };
+        });
+      }
 
       setCustomizedItems(initialItems);
-    } else if (!open) {
-      // Reset state when dialog is closed
+    } else {
       resetState();
     }
-  }, [open, product, allProducts, resetState]);
-
-  // Check for compatibility warnings
-  useEffect(() => {
-    const warnings: string[] = [];
-
-    // Check if we have frames but no braces
-    const hasFrames = customizedItems.some(
-      (item) => item.quantity > 0 && item.name.toLowerCase().includes("frame")
-    );
-    const hasBraces = customizedItems.some(
-      (item) => item.quantity > 0 && item.name.toLowerCase().includes("brace")
-    );
-
-    if (hasFrames && !hasBraces) {
-      warnings.push(
-        "Scaffold frames typically require cross braces for stability"
-      );
-    }
-
-    // Check if we have platforms but no frames
-    const hasPlatforms = customizedItems.some(
-      (item) =>
-        item.quantity > 0 && item.name.toLowerCase().includes("platform")
-    );
-
-    if (hasPlatforms && !hasFrames) {
-      warnings.push("Scaffold platforms require frames for support");
-    }
-
-    // Check if we have guardrails but no platforms
-    const hasGuardrails = customizedItems.some(
-      (item) =>
-        item.quantity > 0 && item.name.toLowerCase().includes("guardrail")
-    );
-
-    if (hasGuardrails && !hasPlatforms) {
-      warnings.push("Guardrails should be used with platforms");
-    }
-
-    setCompatibilityWarnings(warnings);
-  }, [customizedItems]);
+  }, [open, product, allProducts, resetState, isEditing]);
 
   const handleBundleQuantityChange = useCallback((newQuantity: number) => {
     if (newQuantity < 1) newQuantity = 1;
@@ -305,7 +310,9 @@ export function BundleCustomizationDialog({
     // Update the product price to match our calculated total
     const updatedProduct = {
       ...product,
-      price: totalPrice,
+      price: product.price, // Keep original price
+      quantity: bundleQuantity, // Set the bundle quantity
+      bundleItems: finalItems, // Add bundle items to the product
     };
 
     onAddToCart(updatedProduct, finalItems);
@@ -315,7 +322,7 @@ export function BundleCustomizationDialog({
     
     // Close the dialog
     onOpenChange(false);
-  }, [customizedItems, onAddToCart, onOpenChange, product, resetState, totalPrice]);
+  }, [customizedItems, onAddToCart, onOpenChange, product, resetState, bundleQuantity]);
 
   // Filter visible items (non-optional or with quantity > 0)
   const visibleItems = useMemo(() => 
@@ -323,14 +330,23 @@ export function BundleCustomizationDialog({
     [customizedItems]
   );
 
+  // Update bundle quantity when initialQuantity changes
+  useEffect(() => {
+    if (isEditing) {
+      setBundleQuantity((product as CartItem).quantity);
+    }
+  }, [isEditing, product]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Customize Scaffolding Bundle</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Bundle' : 'Customize Scaffolding Bundle'}</DialogTitle>
           <DialogDescription>
-            Configure quantities and options for the scaffolding components in
-            this bundle
+            {isEditing 
+              ? 'Adjust quantities and options for the bundle components'
+              : 'Configure quantities and options for the scaffolding components in this bundle'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -389,7 +405,9 @@ export function BundleCustomizationDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleAddToCart}>Add to Cart</Button>
+          <Button onClick={handleAddToCart}>
+            {isEditing ? 'Save Changes' : 'Add to Cart'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

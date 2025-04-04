@@ -273,7 +273,7 @@ export default async function POSPage() {
             price: Number(item.child_price || 0),
             defaultQuantity: Number(item.child_meta["default_quantity"] || 1),
             minQuantity: Number(item.child_meta["min_quantity"] || 1),
-            maxQuantity: Number(item.child_meta["max_quantity"] || 10),
+            maxQuantity: Number(item.child_meta["max_quantity"] ),
             optional: item.child_meta["optional"] === "yes",
             menuOrder: Number(item.menu_order),
             visibility: item.child_meta["visibility"] || "visible",

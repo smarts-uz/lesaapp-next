@@ -13,6 +13,9 @@ import { POSProductSection } from "@/components/pos/pos-product-section";
 import { POSCartSection } from "@/components/pos/pos-cart-section";
 import { POSOrderConfirmationDialog } from "@/components/pos/pos-order-confirmation-dialog";
 
+// Import the compatibility check function
+import { checkCompatibilityWarnings } from '@/lib/woocommerce/orders';
+
 interface POSClientProps {
   products: Product[];
 }
@@ -54,44 +57,7 @@ export function POSClient({ products }: POSClientProps) {
 
   // Check for compatibility warnings in the cart
   useEffect(() => {
-    const warnings: string[] = [];
-
-    // Get all bundle items in the cart
-    const allBundleItems = cart
-      .filter((item) => item.type === "bundle" && item.bundleItems)
-      .flatMap((item) => item.bundleItems || [])
-      .filter((item) => item.quantity > 0);
-
-    // Check if we have frames but no braces
-    const hasFrames = allBundleItems.some((item) =>
-      item.name.toLowerCase().includes("frame")
-    );
-    const hasBraces = allBundleItems.some((item) =>
-      item.name.toLowerCase().includes("brace")
-    );
-
-    if (hasFrames && !hasBraces) {
-      warnings.push("Your cart has scaffold frames but no cross braces");
-    }
-
-    // Check if we have platforms but no frames
-    const hasPlatforms = allBundleItems.some((item) =>
-      item.name.toLowerCase().includes("platform")
-    );
-
-    if (hasPlatforms && !hasFrames) {
-      warnings.push("Your cart has platforms but no scaffold frames");
-    }
-
-    // Check if we have guardrails but no platforms
-    const hasGuardrails = allBundleItems.some((item) =>
-      item.name.toLowerCase().includes("guardrail")
-    );
-
-    if (hasGuardrails && !hasPlatforms) {
-      warnings.push("Your cart has guardrails but no platforms");
-    }
-
+    const warnings = checkCompatibilityWarnings(cart);
     setCompatibilityWarnings(warnings);
   }, [cart]);
 
@@ -127,7 +93,7 @@ export function POSClient({ products }: POSClientProps) {
   };
 
   const addBundleToCart = (
-    product: Product,
+    product: Product & { quantity?: number },
     customizedItems: CustomizedBundleItem[]
   ) => {
     if (editingCartItemIndex !== null) {
@@ -136,9 +102,9 @@ export function POSClient({ products }: POSClientProps) {
         const newCart = [...prevCart];
         newCart[editingCartItemIndex] = {
           ...product,
-          quantity: prevCart[editingCartItemIndex].quantity,
+          quantity: product.quantity || prevCart[editingCartItemIndex].quantity,
           bundleItems: customizedItems,
-        };
+        } as CartItem;
         return newCart;
       });
 
@@ -155,9 +121,9 @@ export function POSClient({ products }: POSClientProps) {
           ...prevCart,
           {
             ...product,
-            quantity: 1,
+            quantity: product.quantity || 1,
             bundleItems: customizedItems,
-          },
+          } as CartItem,
         ];
       });
 
