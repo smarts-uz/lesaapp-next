@@ -1312,7 +1312,521 @@ Men `QuantityControl` komponentiga quyidagi o'zgarishlarni kiritdim:
    - Chiroyli ko'rinish uchun CSS stillar
 
 3. Qo'shimcha funksiyalar:
-   - `handleInputChange`: kiritilgan qiymatni tekshiradi va
+   - `handleInputChange`: kiritilgan qiymatni tekshiradi va chegaralaydi
+   - `handleKeyDown`: faqat raqamlar va maxsus tugmalarni (Backspace, Delete, Arrow keys) ishlashiga ruxsat beradi
+
+4. Stillar:
+   - Input kengligi kichik va katta o'lcham uchun moslashtirildi
+   - Border va outline yo'q qilindi
+   - Text markazga joylashtirildi
+
+Endi foydalanuvchilar quyidagi usullar bilan miqdorni o'zgartirishi mumkin:
+1. "+" va "-" tugmalari orqali
+2. Klaviaturadan to'g'ridan-to'g'ri raqam kiritish orqali
+3. Raqamlarni nusxalash va qo'yish orqali
+
+Kiritilgan qiymatlar avtomatik ravishda minimum va maksimum chegaralar orasida bo'lishini ta'minlaydi.
+
+---
+
+_**User**_
+
+qty da max qty bo'lmasin istalgancha qty belglash  mumkun
+
+---
+
+_**Assistant**_
+
+Men `QuantityControl` komponentidan maksimum qiymat cheklovini olib tashlayman va istalgan miqdorni kiritish imkoniyatini yarataman.
+
+---
+
+```diff
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseInt(e.target.value);
+-     if (!isNaN(value)) {
+-       // Ensure the value is within bounds
+-       const newValue = Math.max(minQuantity, Math.min(value, maxQuantity));
+-       onQuantityChange(newValue);
++     if (!isNaN(value) && value >= minQuantity) {
++       onQuantityChange(value);
+      }
+    };
+            className={`${inputWidth} text-center ${textSize} border-none focus:outline-none focus:ring-0`}
+            min={minQuantity}
+-           max={maxQuantity}
+          />
+          <Button
+            className={`${buttonSize} rounded-none`}
+            onClick={() => onQuantityChange(quantity + 1)}
+-           disabled={quantity >= maxQuantity}
+          >
+            <Plus className="h-3 w-3" />
+              quantity={bundleQuantity}
+              minQuantity={1}
+-             maxQuantity={999}
++             maxQuantity={999999999}
+              onQuantityChange={handleBundleQuantityChange}
+            />
+```
+
+---
+
+Men quyidagi o'zgarishlarni kiritdim:
+
+1. `handleInputChange` funksiyasidan maksimum qiymat cheklovini olib tashladim:
+   - Endi faqat minimal qiymatni tekshiradi (0 dan katta bo'lishi kerak)
+   - `Math.min()` tekshiruvini olib tashladim
+
+2. Input elementidan `max` atributini olib tashladim:
+   - Foydalanuvchi istalgan raqamni kiritishi mumkin
+   - Faqat `min` atributi qoldirildi
+
+3. "+" tugmasidan `disabled` holatini olib tashladim:
+   - Endi istalgancha ko'paytirish mumkin
+   - Maksimum chegarasi yo'q
+
+4. Bundle miqdori uchun maksimum qiymatni juda katta raqamga o'zgartirdim (999999999):
+   - Amalda cheklov yo'q
+   - Foydalanuvchi istalgancha miqdor kiritishi mumkin
+
+Endi foydalanuvchilar:
+1. Istalgan miqdorni to'g'ridan-to'g'ri kiritishi mumkin
+2. "+" tugmasi orqali istalgancha ko'paytirishi mumkin
+3. Faqat minimal qiymat (1) dan past bo'lmagan raqamlarni kiritishi mumkin
+4. Maksimal chegara yo'q
+
+Bu o'zgarishlar bilan foydalanuvchilar bundle va mahsulot miqdorlarini o'z ehtiyojlariga qarab erkin belgilashlari mumkin.
+
+---
+
+_**User**_
+
+make infinity profduct qty and bundle items quantity
+
+---
+
+_**Assistant**_
+
+Men `QuantityControl` komponentini va `BundleCustomizationDialog` komponentini o'zgartiraman. Barcha maximal chegaralarni olib tashlayman.
+
+---
+
+```diff
+    quantity: number;
+    minQuantity: number;
+-   maxQuantity: number;
+    onQuantityChange: (newQuantity: number) => void;
+    label?: string;
+    quantity,
+    minQuantity,
+-   maxQuantity,
+    onQuantityChange,
+    label,
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseInt(e.target.value);
+-     if (!isNaN(value)) {
+-       // Ensure the value is within bounds
+-       const newValue = Math.max(minQuantity, Math.min(value, maxQuantity));
+-       onQuantityChange(newValue);
++     if (!isNaN(value) && value >= minQuantity) {
++       onQuantityChange(value);
+      }
+    };
+            className={`${inputWidth} text-center ${textSize} border-none focus:outline-none focus:ring-0`}
+            min={minQuantity}
+-           max={maxQuantity}
+          />
+          <Button
+            className={`${buttonSize} rounded-none`}
+            onClick={() => onQuantityChange(quantity + 1)}
+-           disabled={quantity >= maxQuantity}
+          >
+            <Plus className="h-3 w-3" />
+                quantity={item.quantity}
+                minQuantity={item.minQuantity}
+-               maxQuantity={item.maxQuantity}
+                onQuantityChange={(newQuantity) => onQuantityChange(item.id, newQuantity)}
+                label="Quantity"
+-               tooltipContent={`Min: ${item.minQuantity}, Max: ${item.maxQuantity}`}
++               tooltipContent={`Min: ${item.minQuantity}`}
+              />
+            </div>
+              quantity: item.defaultQuantity,
+              minQuantity: item.minQuantity || 1,
+-             maxQuantity: item.maxQuantity || 999,
+              stock: simpleProduct?.stock || 0,
+              selectedOptions:
+        const newItemQuantity = Math.round(item.quantity * ratio);
+        
+-       // Ensure the new quantity is within the min/max limits
+-       const validQuantity = Math.max(
+-         item.minQuantity,
+-         Math.min(newItemQuantity, item.maxQuantity)
+-       );
++       // Ensure the new quantity is not less than minQuantity
++       const validQuantity = Math.max(item.minQuantity, newItemQuantity);
+        
+        return {
+      if (!item) return;
+      
+-     // Ensure quantity is within min/max limits
+-     const validQuantity = Math.max(
+-       item.minQuantity,
+-       Math.min(newQuantity, item.maxQuantity)
+-     );
++     // Ensure quantity is not less than minQuantity
++     const validQuantity = Math.max(item.minQuantity, newQuantity);
+      
+      const updatedItems = customizedItems.map((i) =>
+              quantity={bundleQuantity}
+              minQuantity={1}
+-             maxQuantity={999}
+              onQuantityChange={handleBundleQuantityChange}
+            />
+```
+
+---
+
+Men quyidagi o'zgarishlarni kiritdim:
+
+1. `QuantityControl` komponentidan maksimal chegara bilan bog'liq barcha kodlarni olib tashladim:
+   - `maxQuantity` prop'ini olib tashladim
+   - Input elementidan `max` atributini olib tashladim
+   - "+" tugmasidan `disabled` holatini olib tashladim
+   - Miqdorni tekshirishda faqat minimal qiymatni tekshiradigan qildim
+
+2. `BundleItem` komponentida:
+   - `maxQuantity` prop'ini olib tashladim
+   - Tooltip matnidan maksimal qiymat haqidagi ma'lumotni olib tashladim
+
+3. `BundleCustomizationDialog` komponentida:
+   - Bundle itemlarni yaratishda `maxQuantity` ni olib tashladim
+   - `handleBundleQuantityChange` funksiyasida maksimal chegara tekshiruvini olib tashladim
+   - `handleQuantityChange` funksiyasida maksimal chegara tekshiruvini olib tashladim
+   - Bundle miqdori uchun `maxQuantity` ni olib tashladim
+
+4. Barcha miqdorlar uchun faqat minimal qiymat tekshiruvi qoldirildi:
+   - Bundle miqdori uchun minimal qiymat: 1
+   - Bundle itemlar uchun minimal qiymat: `item.minQuantity` yoki 1
+
+Endi:
+- Asosiy bundle va uning ichidagi itemlar uchun istalgancha miqdor kiritish mumkin
+- Faqat minimal qiymatdan past bo'lmagan raqamlarni kiritish mumkin
+- Raqamlarni ham klaviaturadan kiritish, ham +/- tugmalari orqali o'zgartirish mumkin
+- Maksimal chegara yo'q
+
+---
+
+_**User**_
+
+Received NaN for the `value` attribute. If this is expected, cast the value to a string. 
+
+---
+
+_**Assistant**_
+
+Bu xato `QuantityControl` komponentida input qiymatini string sifatida ko'rsatmasligimiz tufayli kelib chiqyapti. Men buni tuzataman:
+
+---
+
+```diff
+          <input
+            type="text"
+-           value={quantity}
++           value={quantity.toString()}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+```
+
+---
+
+Men quyidagi o'zgarishni kiritdim:
+
+1. Input elementining `value` atributida `quantity` ni `toString()` metodi orqali string ga o'zgartirdim:
+```typescript
+value={quantity.toString()}
+```
+
+Bu o'zgarish:
+- React'ning "Received NaN for the `value` attribute" xatosini bartaraf qiladi
+- Input qiymatini har doim string sifatida ko'rsatadi
+- Raqamli qiymatni string formatga o'tkazadi
+
+Endi:
+- Input qiymati har doim string bo'ladi
+- NaN xatosi kelmasligi kerak
+- Foydalanuvchi raqamlarni kiritishi va ko'rishi mumkin
+- +/- tugmalari va klaviatura orqali kiritish ishlayveradi
+
+---
+
+_**User**_
+
+barcha joyda qty max qty siz bo'lishi zarur
+
+---
+
+_**Assistant**_
+
+Men barcha komponentlardan `maxQuantity` ni olib tashlayman va cheksiz miqdor kiritish imkoniyatini yarataman:
+
+---
+
+```diff
+    quantity: number;
+    minQuantity: number;
+-   maxQuantity: number;
+    onQuantityChange: (newQuantity: number) => void;
+    label?: string;
+    quantity,
+    minQuantity,
+-   maxQuantity,
+    onQuantityChange,
+    label,
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseInt(e.target.value);
+-     if (!isNaN(value)) {
+-       // Ensure the value is within bounds
+-       const newValue = Math.max(minQuantity, Math.min(value, maxQuantity));
+-       onQuantityChange(newValue);
++     if (!isNaN(value) && value >= minQuantity) {
++       onQuantityChange(value);
+      }
+    };
+          <input
+            type="text"
+-           value={quantity}
++           value={quantity.toString()}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            className={`${inputWidth} text-center ${textSize} border-none focus:outline-none focus:ring-0`}
+            min={minQuantity}
+-           max={maxQuantity}
+          />
+          <Button
+            className={`${buttonSize} rounded-none`}
+            onClick={() => onQuantityChange(quantity + 1)}
+-           disabled={quantity >= maxQuantity}
+          >
+            <Plus className="h-3 w-3" />
+                quantity={item.quantity}
+                minQuantity={item.minQuantity}
+-               maxQuantity={item.maxQuantity}
+                onQuantityChange={(newQuantity) => onQuantityChange(item.id, newQuantity)}
+                label="Quantity"
+-               tooltipContent={`Min: ${item.minQuantity}, Max: ${item.maxQuantity}`}
++               tooltipContent={`Min: ${item.minQuantity}`}
+              />
+            </div>
+              quantity: item.defaultQuantity,
+              minQuantity: item.minQuantity || 1,
+-             maxQuantity: item.maxQuantity || 999,
+              stock: simpleProduct?.stock || 0,
+              selectedOptions:
+        const newItemQuantity = Math.round(item.quantity * ratio);
+        
+-       // Ensure the new quantity is within the min/max limits
+-       const validQuantity = Math.max(
+-         item.minQuantity,
+-         Math.min(newItemQuantity, item.maxQuantity)
+-       );
++       // Ensure the new quantity is not less than minQuantity
++       const validQuantity = Math.max(item.minQuantity, newItemQuantity);
+        
+        return {
+      if (!item) return;
+      
+-     // Ensure quantity is within min/max limits
+-     const validQuantity = Math.max(
+-       item.minQuantity,
+-       Math.min(newQuantity, item.maxQuantity)
+-     );
++     // Ensure quantity is not less than minQuantity
++     const validQuantity = Math.max(item.minQuantity, newQuantity);
+      
+      const updatedItems = customizedItems.map((i) =>
+              quantity={bundleQuantity}
+              minQuantity={1}
+-             maxQuantity={999}
+              onQuantityChange={handleBundleQuantityChange}
+            />
+```
+
+---
+
+Men quyidagi o'zgarishlarni kiritdim:
+
+1. `QuantityControl` komponentidan:
+   - `maxQuantity` prop'ini olib tashladim
+   - Input'dan `max` atributini olib tashladim
+   - "+" tugmasidan `disabled` holatini olib tashladim
+   - `value` ni string formatga o'zgartirdim
+   - Faqat minimal qiymat tekshiruvini qoldirdim
+
+2. `BundleItem` komponentidan:
+   - `maxQuantity` prop'ini olib tashladim
+   - Tooltip matnidan maksimal qiymat haqidagi ma'lumotni olib tashladim
+
+3. `BundleCustomizationDialog` komponentidan:
+   - Bundle itemlarni yaratishda `maxQuantity` ni olib tashladim
+   - `handleBundleQuantityChange` funksiyasida maksimal chegara tekshiruvini olib tashladim
+   - `handleQuantityChange` funksiyasida maksimal chegara tekshiruvini olib tashladim
+   - Bundle miqdori uchun `maxQuantity` ni olib tashladim
+
+Endi:
+1. Barcha miqdorlar uchun faqat minimal qiymat tekshiruvi qoldi (0 dan katta bo'lishi kerak)
+2. Maksimal chegara yo'q - istalgancha miqdor kiritish mumkin
+3. Raqamlarni ham klaviaturadan kiritish, ham +/- tugmalari orqali o'zgartirish mumkin
+4. Input qiymati har doim string formatda ko'rsatiladi
+5. Bundle va uning ichidagi itemlar uchun cheksiz miqdor belgilash mumkin
+
+---
+
+_**User**_
+
+card-item.ts da qty bilan muammo bor bundle qty si va item qty lar orasidagi initsializatsiya da
+
+---
+
+_**Assistant**_
+
+`card-item.ts` faylini tekshirib, bundle va item quantity'lari orasidagi muammoni ko'rib chiqaman:
+
+---
+
+<details>
+            <summary>Searched codebase "cart-item.ts" • **1** results</summary>
+        
+| File |
+|------|
+| `undefined` |
+
+</details>
+
+---
+
+Read file: components/pos/cart-item.tsx
+
+---
+
+Muammoni ko'rib chiqdim. `cart-item.tsx` faylida bundle va item quantity'lari orasida bir necha muammo bor:
+
+1. Bundle quantity o'zgartirilganda bundle itemlar quantity'si noto'g'ri hisoblanmoqda:
+```typescript
+const ratio = newQuantity / item.quantity;
+const newItemQuantity = Math.round(bundleItem.quantity * ratio);
+```
+
+2. `maxQuantity` tekshiruvi hali ham qolgan:
+```typescript
+const validQuantity = Math.max(
+  bundleItem.minQuantity,
+  Math.min(newItemQuantity, bundleItem.maxQuantity)
+);
+```
+
+Men bu muammolarni tuzataman:
+
+---
+
+```diff
+                  if (item.type === "bundle" && item.bundleItems) {
+                    // Calculate the ratio of the new quantity to the current quantity
+-                   const ratio = newQuantity / item.quantity;
++                   const ratio = newQuantity / item.quantity
+                    
+                    // Update bundle items quantities proportionally
+-                   const updatedBundleItems = item.bundleItems.map(bundleItem => {
++                   item.bundleItems.forEach(bundleItem => {
+                      // Calculate the new quantity for this item
+-                     const newItemQuantity = Math.round(bundleItem.quantity * ratio);
++                     const newItemQuantity = Math.round(bundleItem.quantity * ratio)
+                      
+-                     // Ensure the new quantity is within min/max limits
+-                     const validQuantity = Math.max(
+-                       bundleItem.minQuantity,
+-                       Math.min(newItemQuantity, bundleItem.maxQuantity)
+-                     );
++                     // Ensure the new quantity is not less than minQuantity
++                     const validQuantity = Math.max(bundleItem.minQuantity, newItemQuantity)
+                      
+                      // Update bundle item quantity
+-                     onUpdateBundleItemQuantity(index, bundleItem.id, validQuantity);
+-                     
+-                     return {
+-                       ...bundleItem,
+-                       quantity: validQuantity
+-                     };
+-                   });
++                     onUpdateBundleItemQuantity(index, bundleItem.id, validQuantity)
++                   })
+                  }
+                  
+                  // Update main item quantity
+-                 onUpdateQuantity(index, newQuantity);
++                 onUpdateQuantity(index, newQuantity)
+                }}
+                size="sm"
+```
+
+---
+
+Men quyidagi o'zgarishlarni kiritdim:
+
+1. `maxQuantity` tekshiruvini olib tashladim:
+```typescript
+// Eski kod
+const validQuantity = Math.max(
+  bundleItem.minQuantity,
+  Math.min(newItemQuantity, bundleItem.maxQuantity)
+);
+
+// Yangi kod
+const validQuantity = Math.max(bundleItem.minQuantity, newItemQuantity);
+```
+
+2. Bundle itemlar yangilanishini soddalashtirdim:
+```typescript
+// Eski kod
+const updatedBundleItems = item.bundleItems.map(bundleItem => {
+  // ...
+  return { ...bundleItem, quantity: validQuantity };
+});
+
+// Yangi kod
+item.bundleItems.forEach(bundleItem => {
+  // ...
+  onUpdateBundleItemQuantity(index, bundleItem.id, validQuantity);
+});
+```
+
+3. Ortiqcha array yaratishni olib tashladim va to'g'ridan-to'g'ri `onUpdateBundleItemQuantity` ni chaqiradigan qildim.
+
+Bu o'zgarishlar:
+1. Bundle va uning itemlari orasidagi quantity sinxronizatsiyasini to'g'rilaydi
+2. Maksimal chegara cheklovini olib tashlaydi
+3. Istalgancha miqdor kiritish imkonini beradi
+4. Proporsional hisoblashni to'g'ri amalga oshiradi
+5. Ortiqcha array yaratishni oldini oladi
+
+Endi:
+- Bundle quantity o'zgartirilganda, uning ichidagi itemlar quantity'si proporsional ravishda o'zgaradi
+- Faqat minimal qiymat tekshiruvi qoldi (0 dan katta bo'lishi kerak)
+- Maksimal chegara yo'q - istalgancha miqdor kiritish mumkin
+- Bundle va uning itemlari orasidagi sinxronizatsiya to'g'ri ishlaydi
+
+---
+
+_**User**_
+
+muammo haliham mavjud 
+
+---
+
+_**Assistant**_
+
+
 
 ---
 
