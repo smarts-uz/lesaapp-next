@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import type { CartItem, CustomizedBundleItem, Product } from "@/types/pos";
 import { toast } from "@/components/ui/use-toast";
 import { BundleCustomizationDialog } from "@/components/pos/bundle-customization-dialog";
-import { createOrder } from "@/lib/woocommerce";
 
 // Import the new components
 import { POSHeader } from "@/components/pos/pos-header";
@@ -289,21 +288,6 @@ export function POSClient({ products }: POSClientProps) {
         payment_method: "cash",
         status: "processing",
       };
-
-      // Create order in database
-      const order = await createOrder(orderData);
-
-      // Set order details for confirmation dialog
-      setOrderDetails({
-        ...order,
-        items: orderData.items,
-        subtotal,
-        tax_total: taxAmount,
-        total,
-      });
-
-      // Show order completion dialog
-      setOrderComplete(true);
 
       // Clear cart after successful order
       setCart([]);

@@ -27,7 +27,6 @@ import type { OrderItem } from "@/types/pos"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { processRefund } from "@/lib/woocommerce"
 
 interface RefundDialogProps {
   orderId: string
@@ -235,10 +234,8 @@ export function RefundDialog({ orderId, orderNumber, items, onRefundComplete }: 
       }
 
       // Process the refund
-      const result = await processRefund(orderId, refundData)
 
       // Notify parent component about the refund
-      onRefundComplete(result)
 
       toast({
         title: "Refund processed",
