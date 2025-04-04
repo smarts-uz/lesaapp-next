@@ -1,61 +1,18 @@
 import type { Order } from "@/types/pos";
-import { createOrderAction } from "../actions";
-import { prisma } from "../prisma";
-import { Prisma, wp_wc_orders } from "@prisma/client";
-
+import { wp_wc_orders } from "@prisma/client";
 type OrderWithRelations = wp_wc_orders & {
   orderStats: { total_sales: number; total_shipping: number; total_tax: number; total_discount: number; };
   orderAddresses: Array<{ address_type: string; first_name: string; last_name: string; email?: string; phone?: string; address_1?: string; city?: string; state?: string; postcode?: string; country?: string; }>;
   orderItems: Array<any>;
   orderRefunds: Array<any>;
 };
+import { prisma } from "../prisma";
 
 /**
  * Creates a new order in WooCommerce
  * @param orderData The order data to create
  * @returns A promise that resolves to the created order
  */
-export async function createOrder(orderData: any) {
-  try {
-    // Process bundle items to ensure they have the correct structure
-    const processedItems = orderData.items.map((item: any) => {
-      if (item.type === 'bundle' && item.bundleItems && Array.isArray(item.bundleItems)) {
-        // Ensure each bundle item has the required fields
-        const processedBundleItems = item.bundleItems.map((bundleItem: any) => ({
-          id: bundleItem.id || 0,
-          product_id: bundleItem.product_id || bundleItem.productId || 0,
-          name: bundleItem.name || '',
-          price: bundleItem.price || 0,
-          quantity: bundleItem.quantity || 0,
-          total: bundleItem.total || (bundleItem.price * bundleItem.quantity) || 0,
-          variation_id: bundleItem.variation_id || 0,
-          ...bundleItem
-        }));
-        
-        return {
-          ...item,
-          bundleItems: processedBundleItems
-        };
-      }
-      return item;
-    });
-    
-    // Use the server action to create the order
-    const result = await createOrderAction({
-      ...orderData,
-      items: processedItems
-    });
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to create order');
-    }
-    
-    return result.order;
-  } catch (error) {
-    console.error('Error creating order:', error);
-    throw error;
-  }
-}
 
 /**
  * Fetches an order from WooCommerce by ID
@@ -86,8 +43,6 @@ export async function fetchOrder(orderId: string): Promise<Order | null> {
     // Process order items
     const items = processOrderItems(order.orderItems);
 
-    // Process refunds
-    const refunds = processRefunds(order.orderRefunds, Number(order.id), Number(order.total_amount));
 
     // Check for compatibility warnings
     const compatibilityWarnings = checkCompatibilityWarnings(items);
@@ -129,7 +84,6 @@ export async function fetchOrder(orderId: string): Promise<Order | null> {
       tax_total: parseFloat(order.orderStats?.total_tax?.toString() || '0'),
       discount_total: parseFloat(order.orderStats?.total_discount?.toString() || '0'),
       total: parseFloat(order.total_amount?.toString() || '0'),
-      refunds,
       compatibility_warnings: compatibilityWarnings,
       currency: order.currency || 'USD',
       customer_id: order.customer_id ? parseInt(order.customer_id.toString()) : undefined,
@@ -231,36 +185,6 @@ function processOrderItems(orderItems: any[]): any[] {
   });
 }
 
-/**
- * Process refunds from the database
- * @param orderRefunds The refunds from the database
- * @param orderId The ID of the order
- * @param totalAmount The total amount of the order
- * @returns Processed refunds
- */
-function processRefunds(orderRefunds: any[], orderId: number, totalAmount: number): any[] {
-  return orderRefunds.map((refund: any) => {
-    return {
-      id: refund.id.toString(),
-      order_id: orderId.toString(),
-      date: refund.date_created_gmt?.toISOString() || new Date().toISOString(),
-      amount: parseFloat(refund.amount || '0'),
-      reason: refund.reason || '',
-      items: refund.orderRefundItems.map((item: any) => ({
-        id: item.order_item_id,
-        name: item.name || `Item #${item.order_item_id}`,
-        type: item.type || 'simple',
-        refunded: true
-      })),
-      payment_method: refund.payment_method || 'original',
-      transaction_id: refund.transaction_id || '',
-      status: refund.status || 'completed',
-      created_by: refund.created_by || 'System',
-      restock_items: refund.restock_items || false,
-      refund_type: Number(refund.amount) === Number(totalAmount) ? 'full' : 'partial'
-    };
-  });
-}
 
 /**
  * Check for compatibility warnings in order items
