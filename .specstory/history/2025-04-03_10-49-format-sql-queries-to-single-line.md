@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll help you format all the SQL queries in the file to a single line. Let me edit the file for you.
 
-
 ---
 
 Unable to write file 'r:\Projects\smarts\lesaapp-next\z:\WordPR\SVendor\WooCommerce.com\DTBases\Create Order Bundle Simple\1.sql' (Unknown (FileSystemError): Error: EINVAL: invalid argument, mkdir 'r:\Projects\smarts\lesaapp-next\z:')
@@ -52,7 +51,4 @@ You can copy this formatted SQL and paste it into your file to replace the curre
 
 ---
 
-
-
 ---
-

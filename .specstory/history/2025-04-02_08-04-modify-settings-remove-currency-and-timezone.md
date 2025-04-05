@@ -4,14 +4,13 @@
 
 _**User**_
 
-get rid of currency  & timezone & only leave themes & lang
+get rid of currency & timezone & only leave themes & lang
 
 ---
 
 _**Assistant**_
 
 I'll help you modify the settings page to only keep the language and theme options. I'll edit the file to remove the currency and timezone sections.
-
 
 ---
 
@@ -21,25 +20,25 @@ I'll help you modify the settings page to only keep the language and theme optio
 - import { Input } from "@/components/ui/input"
   import { Label } from "@/components/ui/label"
   import { Switch } from "@/components/ui/switch"
-  
+
   export default function SettingsPage() {
 -   const [currency, setCurrency] = useState("UZS")
     const [darkMode, setDarkMode] = useState(false)
-  
+
     useEffect(() => {
 -     const savedCurrency = localStorage.getItem("currency") || "UZS"
       const savedDarkMode = localStorage.getItem("darkMode")
       const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
--     
+-
 -     setCurrency(savedCurrency)
       setDarkMode(savedDarkMode === null ? systemDarkMode : savedDarkMode === "true")
     }, [])
-- 
+-
 -   const handleCurrencyChange = (value: string) => {
 -     setCurrency(value)
 -     localStorage.setItem("currency", value)
 -   }
-  
+
     const handleDarkModeChange = (checked: boolean) => {
           <CardContent className="space-y-6">
             <div className="space-y-4">
@@ -57,7 +56,7 @@ I'll help you modify the settings page to only keep the language and theme optio
 -                   </SelectContent>
 -                 </Select>
 -               </div>
-- 
+-
 -               <div className="space-y-2">
 -                 <Label htmlFor="timezone">Timezone</Label>
 -                 <Select defaultValue="utc-5">
@@ -95,7 +94,7 @@ I'll help you modify the settings page to only keep the language and theme optio
 -                 </Select>
 -               </div>
 -             </div>
-- 
+-
 -             <div className="space-y-2">
 -               <Label htmlFor="currency">Currency</Label>
 -               <Select value={currency} onValueChange={handleCurrencyChange}>
@@ -128,7 +127,4 @@ I've removed the currency and timezone sections, keeping only the language selec
 
 ---
 
-
-
 ---
-

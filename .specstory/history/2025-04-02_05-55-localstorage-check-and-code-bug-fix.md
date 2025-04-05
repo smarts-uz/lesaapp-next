@@ -4,7 +4,7 @@
 
 _**User**_
 
-check for localstorage to exist first  & fix code bugs 
+check for localstorage to exist first & fix code bugs
 
 ---
 
@@ -14,11 +14,10 @@ I'll help fix the potential issue with `localStorage` access. The code should ch
 
 Let me modify the code:
 
-
 ---
 
 ```diff
-  
+
   export function formatCurrency(amount: number, currency?: string): string {
 -   const selectedCurrency = currency || localStorage.getItem("currency") || "UZS"
 +   const getStoredCurrency = () => {
@@ -27,7 +26,7 @@ Let me modify the code:
 +     }
 +     return null
 +   }
-+   
++
 +   const selectedCurrency = currency || getStoredCurrency() || "UZS"
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -36,6 +35,7 @@ Let me modify the code:
 ---
 
 I've made the following improvements:
+
 1. Added a `getStoredCurrency` helper function that safely checks for `localStorage` availability
 2. Used `window.localStorage` instead of just `localStorage` for better type safety
 3. Added a check for `typeof window !== 'undefined'` to handle server-side rendering
@@ -47,7 +47,7 @@ The code will now work safely in both browser and server environments.
 
 _**User**_
 
-@package.json  @README.md  update read fix scripts & cmds
+@package.json @README.md update read fix scripts & cmds
 
 ---
 
@@ -55,37 +55,36 @@ _**Assistant**_
 
 I'll update the README.md to match the actual scripts from package.json and fix any inconsistencies.
 
-
 ---
 
-```diff
+````diff
   4. Initialize Prisma and sync database:
   ```bash
 - # Pull existing database schema
 - npm run prisma:pull
-- 
+-
 - # Generate Prisma client
 - npm run prisma:generate
-- 
+-
 - # Push schema changes to database (if needed)
 - npm run prisma:push
 + # Pull existing database schema and generate client
 + npm run db
-+ 
++
 + # Open Prisma Studio to view/edit data
 + npm run studio
-  ```
-  
-  
-  ```bash
+````
+
+```bash
 - # Sync database schema and generate client
 + # Pull database schema and generate client
-  npm run db
-  
+npm run db
+
 - # Open database GUI
 + # Open Prisma Studio GUI
-  npm run studio
-  ```
+npm run studio
+```
+
 ```
 
 ---
@@ -105,3 +104,4 @@ The commands now accurately reflect what's available in the project's package.js
 
 ---
 
+```

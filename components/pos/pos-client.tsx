@@ -13,7 +13,7 @@ import { POSCartSection } from "@/components/pos/pos-cart-section";
 import { POSOrderConfirmationDialog } from "@/components/pos/pos-order-confirmation-dialog";
 
 // Import the compatibility check function
-import { checkCompatibilityWarnings } from '@/lib/woocommerce/orders';
+import { checkCompatibilityWarnings } from "@/lib/woocommerce/orders";
 
 interface POSClientProps {
   products: Product[];
@@ -23,9 +23,15 @@ export function POSClient({ products }: POSClientProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedBundle, setSelectedBundle] = useState<Product | null>(null);
   const [isBundleDialogOpen, setIsBundleDialogOpen] = useState(false);
-  const [editingCartItemIndex, setEditingCartItemIndex] = useState<number | null>(null);
-  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
-  const [expandedBundleItems, setExpandedBundleItems] = useState<Record<string, boolean>>({});
+  const [editingCartItemIndex, setEditingCartItemIndex] = useState<
+    number | null
+  >(null);
+  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
+    [],
+  );
+  const [expandedBundleItems, setExpandedBundleItems] = useState<
+    Record<string, boolean>
+  >({});
   const [editingBundleInCart, setEditingBundleInCart] = useState<{
     index: number;
     open: boolean;
@@ -77,7 +83,7 @@ export function POSClient({ products }: POSClientProps) {
         return prevCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
-            : item
+            : item,
         );
       } else {
         return [...prevCart, { ...product, quantity: 1 }];
@@ -93,7 +99,7 @@ export function POSClient({ products }: POSClientProps) {
 
   const addBundleToCart = (
     product: Product & { quantity?: number },
-    customizedItems: CustomizedBundleItem[]
+    customizedItems: CustomizedBundleItem[],
   ) => {
     if (editingCartItemIndex !== null) {
       // Update existing cart item
@@ -143,15 +149,15 @@ export function POSClient({ products }: POSClientProps) {
 
     setCart((prevCart) =>
       prevCart.map((item, i) =>
-        i === index ? { ...item, quantity: newQuantity } : item
-      )
+        i === index ? { ...item, quantity: newQuantity } : item,
+      ),
     );
   };
 
   const updateBundleItemQuantity = (
     cartIndex: number,
     bundleItemId: number,
-    newQuantity: number
+    newQuantity: number,
   ) => {
     setCart((prevCart) => {
       const updatedCart = [...prevCart];
@@ -163,7 +169,7 @@ export function POSClient({ products }: POSClientProps) {
             // Ensure quantity is within allowed limits
             const validQuantity = Math.max(
               item.minQuantity,
-              Math.min(newQuantity, item.maxQuantity)
+              Math.min(newQuantity, item.maxQuantity),
             );
             return { ...item, quantity: validQuantity };
           }
@@ -184,7 +190,7 @@ export function POSClient({ products }: POSClientProps) {
     cartIndex: number,
     bundleItemId: number,
     optionName: string,
-    optionValue: string
+    optionValue: string,
   ) => {
     setCart((prevCart) => {
       const updatedCart = [...prevCart];
@@ -259,15 +265,17 @@ export function POSClient({ products }: POSClientProps) {
             type: item.type || "simple",
             tax_amount: item.price * item.quantity * 0.1,
           };
-          
+
           // If this is a bundle, add the bundle items
           if (item.type === "bundle" && item.bundleItems) {
             // Filter out bundle items with zero quantity
-            const activeBundleItems = item.bundleItems.filter(bi => bi.quantity > 0);
-            
+            const activeBundleItems = item.bundleItems.filter(
+              (bi) => bi.quantity > 0,
+            );
+
             return {
               ...itemData,
-              bundleItems: activeBundleItems.map(bundleItem => ({
+              bundleItems: activeBundleItems.map((bundleItem) => ({
                 id: bundleItem.id,
                 product_id: bundleItem.productId || bundleItem.id,
                 name: bundleItem.name,
@@ -275,11 +283,11 @@ export function POSClient({ products }: POSClientProps) {
                 quantity: bundleItem.quantity,
                 total: bundleItem.price * bundleItem.quantity,
                 variation_id: 0, // Default to 0 if not specified
-                selectedOptions: bundleItem.selectedOptions || {}
-              }))
+                selectedOptions: bundleItem.selectedOptions || {},
+              })),
             };
           }
-          
+
           return itemData;
         }),
         subtotal,
@@ -307,14 +315,11 @@ export function POSClient({ products }: POSClientProps) {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] gap-6">
       <POSCompatibilityWarnings warnings={compatibilityWarnings} />
-      
+
       <POSHeader title="Point of Sale" />
 
       <div className="flex flex-1 gap-6 overflow-hidden">
-        <POSProductSection 
-          products={products} 
-          onAddToCart={addToCart} 
-        />
+        <POSProductSection products={products} onAddToCart={addToCart} />
 
         <POSCartSection
           cart={cart}
@@ -324,7 +329,9 @@ export function POSClient({ products }: POSClientProps) {
           onToggleBundleEditor={toggleInCartBundleEditor}
           onUpdateBundleItemQuantity={updateBundleItemQuantity}
           onUpdateBundleItemOption={updateBundleItemOption}
-          onCloseBundleEditor={() => setEditingBundleInCart({ index: -1, open: false })}
+          onCloseBundleEditor={() =>
+            setEditingBundleInCart({ index: -1, open: false })
+          }
           expandedBundleItems={expandedBundleItems}
           editingBundleInCart={editingBundleInCart}
           subtotal={calculateTotal()}

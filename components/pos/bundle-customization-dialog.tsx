@@ -31,7 +31,7 @@ export interface BundleCustomizationDialogProps {
   allProducts: Product[];
   onAddToCart: (
     product: Product,
-    customizedItems: CustomizedBundleItem[]
+    customizedItems: CustomizedBundleItem[],
   ) => void;
   isEditing?: boolean;
   initialQuantity?: number;
@@ -45,7 +45,7 @@ export interface QuantityControlProps {
   onQuantityChange: (newQuantity: number) => void;
   label?: string;
   tooltipContent?: string;
-  size?: 'default' | 'sm';
+  size?: "default" | "sm";
 }
 
 export function QuantityControl({
@@ -55,11 +55,11 @@ export function QuantityControl({
   onQuantityChange,
   label,
   tooltipContent,
-  size = 'default'
+  size = "default",
 }: QuantityControlProps) {
-  const buttonSize = size === 'sm' ? 'h-6 w-6' : 'h-7 w-7';
-  const textSize = size === 'sm' ? 'text-xs' : 'text-sm';
-  const inputWidth = size === 'sm' ? 'w-12' : 'w-16';
+  const buttonSize = size === "sm" ? "h-6 w-6" : "h-7 w-7";
+  const textSize = size === "sm" ? "text-xs" : "text-sm";
+  const inputWidth = size === "sm" ? "w-12" : "w-16";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -73,8 +73,8 @@ export function QuantityControl({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow only numbers, backspace, delete, and arrow keys
     if (
-      !/[\d\b]/.test(e.key) && 
-      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
+      !/[\d\b]/.test(e.key) &&
+      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
     ) {
       e.preventDefault();
     }
@@ -167,7 +167,9 @@ function BundleItem({ item, onQuantityChange }: BundleItemProps) {
               quantity={item.quantity}
               minQuantity={item.minQuantity}
               maxQuantity={item.maxQuantity}
-              onQuantityChange={(newQuantity) => onQuantityChange(item.id, newQuantity)}
+              onQuantityChange={(newQuantity) =>
+                onQuantityChange(item.id, newQuantity)
+              }
               label="Quantity"
               tooltipContent={`Min: ${item.minQuantity}, Max: ${item.maxQuantity}`}
             />
@@ -185,7 +187,7 @@ interface CompatibilityWarningsProps {
 
 function CompatibilityWarnings({ warnings }: CompatibilityWarningsProps) {
   if (warnings.length === 0) return null;
-  
+
   return (
     <Alert variant="warning" className="mb-4">
       <AlertCircle className="h-4 w-4" />
@@ -210,12 +212,19 @@ export function BundleCustomizationDialog({
   isEditing = false,
   initialQuantity = 1,
 }: BundleCustomizationDialogProps) {
-  const [customizedItems, setCustomizedItems] = useState<CustomizedBundleItem[]>([]);
+  const [customizedItems, setCustomizedItems] = useState<
+    CustomizedBundleItem[]
+  >([]);
   const [bundleQuantity, setBundleQuantity] = useState(initialQuantity);
-  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
-  
+  const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
+    [],
+  );
+
   // Calculate total price based on bundle quantity
-  const totalPrice = useMemo(() => product.price * bundleQuantity, [product.price, bundleQuantity]);
+  const totalPrice = useMemo(
+    () => product.price * bundleQuantity,
+    [product.price, bundleQuantity],
+  );
 
   // Reset state function
   const resetState = useCallback(() => {
@@ -228,7 +237,7 @@ export function BundleCustomizationDialog({
     if (open) {
       let initialItems: CustomizedBundleItem[] = [];
       const cartItem = product as CartItem;
-      
+
       if (isEditing && cartItem.bundleItems) {
         // Use existing bundle items when editing
         initialItems = cartItem.bundleItems;
@@ -237,7 +246,9 @@ export function BundleCustomizationDialog({
         // Create new bundle items
         initialItems = product.bundledItems.map((item) => {
           // Find the corresponding simple product to get stock information
-          const simpleProduct = allProducts.find((p) => p.id === item.productId);
+          const simpleProduct = allProducts.find(
+            (p) => p.id === item.productId,
+          );
 
           return {
             ...item,
@@ -246,10 +257,13 @@ export function BundleCustomizationDialog({
             maxQuantity: item.maxQuantity || 999,
             stock: simpleProduct?.stock || 0,
             selectedOptions:
-              item.variations?.reduce((acc, variation) => {
-                acc[variation.name] = variation.options[0];
-                return acc;
-              }, {} as Record<string, string>) || {},
+              item.variations?.reduce(
+                (acc, variation) => {
+                  acc[variation.name] = variation.options[0];
+                  return acc;
+                },
+                {} as Record<string, string>,
+              ) || {},
           };
         });
       }
@@ -260,48 +274,54 @@ export function BundleCustomizationDialog({
     }
   }, [open, product, allProducts, resetState, isEditing]);
 
-  const handleBundleQuantityChange = useCallback((newQuantity: number) => {
-    if (newQuantity < 1) newQuantity = 1;
-    setBundleQuantity(newQuantity);
-    
-    // Update bundled items quantities proportionally
-    const updatedItems = customizedItems.map(item => {
-      // Calculate the ratio of the new quantity to the current bundle quantity
-      const ratio = newQuantity / bundleQuantity;
-      // Calculate the new quantity for this item, maintaining the same ratio
-      const newItemQuantity = Math.round(item.quantity * ratio);
-      
-      // Ensure the new quantity is within the min/max limits
+  const handleBundleQuantityChange = useCallback(
+    (newQuantity: number) => {
+      if (newQuantity < 1) newQuantity = 1;
+      setBundleQuantity(newQuantity);
+
+      // Update bundled items quantities proportionally
+      const updatedItems = customizedItems.map((item) => {
+        // Calculate the ratio of the new quantity to the current bundle quantity
+        const ratio = newQuantity / bundleQuantity;
+        // Calculate the new quantity for this item, maintaining the same ratio
+        const newItemQuantity = Math.round(item.quantity * ratio);
+
+        // Ensure the new quantity is within the min/max limits
+        const validQuantity = Math.max(
+          item.minQuantity,
+          Math.min(newItemQuantity, item.maxQuantity),
+        );
+
+        return {
+          ...item,
+          quantity: validQuantity,
+        };
+      });
+
+      setCustomizedItems(updatedItems);
+    },
+    [bundleQuantity, customizedItems],
+  );
+
+  const handleQuantityChange = useCallback(
+    (itemId: number, newQuantity: number) => {
+      const item = customizedItems.find((i) => i.id === itemId);
+      if (!item) return;
+
+      // Ensure quantity is within min/max limits
       const validQuantity = Math.max(
         item.minQuantity,
-        Math.min(newItemQuantity, item.maxQuantity)
+        Math.min(newQuantity, item.maxQuantity),
       );
-      
-      return {
-        ...item,
-        quantity: validQuantity
-      };
-    });
-    
-    setCustomizedItems(updatedItems);
-  }, [bundleQuantity, customizedItems]);
 
-  const handleQuantityChange = useCallback((itemId: number, newQuantity: number) => {
-    const item = customizedItems.find((i) => i.id === itemId);
-    if (!item) return;
-    
-    // Ensure quantity is within min/max limits
-    const validQuantity = Math.max(
-      item.minQuantity,
-      Math.min(newQuantity, item.maxQuantity)
-    );
-    
-    const updatedItems = customizedItems.map((i) =>
-      i.id === itemId ? { ...i, quantity: validQuantity } : i
-    );
-    
-    setCustomizedItems(updatedItems);
-  }, [customizedItems]);
+      const updatedItems = customizedItems.map((i) =>
+        i.id === itemId ? { ...i, quantity: validQuantity } : i,
+      );
+
+      setCustomizedItems(updatedItems);
+    },
+    [customizedItems],
+  );
 
   const handleAddToCart = useCallback(() => {
     // Filter out items with quantity 0
@@ -316,18 +336,25 @@ export function BundleCustomizationDialog({
     };
 
     onAddToCart(updatedProduct, finalItems);
-    
+
     // Reset state
     resetState();
-    
+
     // Close the dialog
     onOpenChange(false);
-  }, [customizedItems, onAddToCart, onOpenChange, product, resetState, bundleQuantity]);
+  }, [
+    customizedItems,
+    onAddToCart,
+    onOpenChange,
+    product,
+    resetState,
+    bundleQuantity,
+  ]);
 
   // Filter visible items (non-optional or with quantity > 0)
-  const visibleItems = useMemo(() => 
-    customizedItems.filter((item) => !item.optional || item.quantity > 0),
-    [customizedItems]
+  const visibleItems = useMemo(
+    () => customizedItems.filter((item) => !item.optional || item.quantity > 0),
+    [customizedItems],
   );
 
   // Update bundle quantity when initialQuantity changes
@@ -341,12 +368,13 @@ export function BundleCustomizationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Bundle' : 'Customize Scaffolding Bundle'}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Bundle" : "Customize Scaffolding Bundle"}
+          </DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Adjust quantities and options for the bundle components'
-              : 'Configure quantities and options for the scaffolding components in this bundle'
-            }
+            {isEditing
+              ? "Adjust quantities and options for the bundle components"
+              : "Configure quantities and options for the scaffolding components in this bundle"}
           </DialogDescription>
         </DialogHeader>
 
@@ -406,7 +434,7 @@ export function BundleCustomizationDialog({
             Cancel
           </Button>
           <Button onClick={handleAddToCart}>
-            {isEditing ? 'Save Changes' : 'Add to Cart'}
+            {isEditing ? "Save Changes" : "Add to Cart"}
           </Button>
         </DialogFooter>
       </DialogContent>

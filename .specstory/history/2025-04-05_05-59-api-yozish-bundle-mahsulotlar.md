@@ -4,7 +4,7 @@
 
 _**User**_
 
-@example.sql  da berilgan bundle product crate qilish uchunham  api yozish kerak bundle querylarni to'liq ko'rib chiqib bundle uchunham api yoz
+@example.sql da berilgan bundle product crate qilish uchunham api yozish kerak bundle querylarni to'liq ko'rib chiqib bundle uchunham api yoz
 
 ---
 
@@ -24,10 +24,10 @@ Let me create a bundle product API endpoint:
 ---
 
 ```diff
-- 
+-
 + import { NextResponse } from 'next/server'
 + import { prisma } from '@/lib/prisma'
-+ 
++
 + // Get all bundle products
 + export async function GET() {
 +   try {
@@ -38,7 +38,7 @@ Let me create a bundle product API endpoint:
 +       price: number
 +       items: string // Serialized bundle items
 +     }>>`
-+       SELECT 
++       SELECT
 +         p.ID as id,
 +         p.post_title as name,
 +         CAST(pm.meta_value AS DECIMAL(10,2)) as price,
@@ -51,25 +51,25 @@ Let me create a bundle product API endpoint:
 +       FROM wp_posts p
 +       JOIN wp_postmeta pm ON p.ID = pm.post_id AND pm.meta_key = '_price'
 +       JOIN wp_woocommerce_bundled_items bi ON p.ID = bi.bundle_id
-+       JOIN wp_woocommerce_bundled_itemmeta bim ON bi.bundled_item_id = bim.bundled_item_id 
++       JOIN wp_woocommerce_bundled_itemmeta bim ON bi.bundled_item_id = bim.bundled_item_id
 +         AND bim.meta_key = 'quantity'
-+       WHERE p.post_type = 'product' 
++       WHERE p.post_type = 'product'
 +       AND p.post_status = 'publish'
 +       AND EXISTS (
-+         SELECT 1 FROM wp_postmeta 
-+         WHERE post_id = p.ID 
++         SELECT 1 FROM wp_postmeta
++         WHERE post_id = p.ID
 +         AND meta_key = '_wc_pb_bundle_data'
 +       )
 +       GROUP BY p.ID
 +     `
-+ 
++
 +     const formattedBundles = bundles.map(bundle => ({
 +       id: bundle.id.toString(),
 +       name: bundle.name,
 +       price: Number(bundle.price),
 +       items: JSON.parse(`[${bundle.items}]`) // Parse serialized items
 +     }))
-+ 
++
 +     return NextResponse.json(formattedBundles)
 +   } catch (error) {
 +     console.error('Failed to fetch bundles:', error)
@@ -79,20 +79,20 @@ Let me create a bundle product API endpoint:
 +     )
 +   }
 + }
-+ 
++
 + // Create a new bundle product
 + export async function POST(request: Request) {
 +   try {
 +     const body = await request.json()
 +     const { name, price, items } = body
-+ 
++
 +     if (!name || !price || !items || !Array.isArray(items) || items.length === 0) {
 +       return NextResponse.json(
 +         { error: 'Name, price and items are required' },
 +         { status: 400 }
 +       )
 +     }
-+ 
++
 +     // Create bundle using Prisma transaction
 +     const result = await prisma.$transaction(async (tx) => {
 +       // 1. Create main product post
@@ -113,7 +113,7 @@ Let me create a bundle product API endpoint:
 +           comment_count: 0
 +         }
 +       })
-+ 
++
 +       // 2. Add product meta
 +       await tx.wp_postmeta.createMany({
 +         data: [
@@ -135,7 +135,7 @@ Let me create a bundle product API endpoint:
 +           }
 +         ]
 +       })
-+ 
++
 +       // 3. Create bundled items
 +       for (const [index, item] of items.entries()) {
 +         const bundledItem = await tx.wp_woocommerce_bundled_items.create({
@@ -145,7 +145,7 @@ Let me create a bundle product API endpoint:
 +             menu_order: index
 +           }
 +         })
-+ 
++
 +         // 4. Add bundled item meta
 +         await tx.wp_woocommerce_bundled_itemmeta.createMany({
 +           data: [
@@ -167,7 +167,7 @@ Let me create a bundle product API endpoint:
 +           ]
 +         })
 +       }
-+ 
++
 +       return {
 +         id: bundle.ID.toString(),
 +         name: bundle.post_title,
@@ -178,7 +178,7 @@ Let me create a bundle product API endpoint:
 +         }))
 +       }
 +     })
-+ 
++
 +     return NextResponse.json(result)
 +   } catch (error) {
 +     console.error('Failed to create bundle:', error)
@@ -187,7 +187,7 @@ Let me create a bundle product API endpoint:
 +       { status: 500 }
 +     )
 +   }
-+ } 
++ }
 ```
 
 ---
@@ -195,6 +195,7 @@ Let me create a bundle product API endpoint:
 I've created a new API endpoint at `app/api/bundle/route.ts` that handles both GET and POST requests for bundle products. Let me explain the key features:
 
 1. **GET Endpoint** (`/api/bundle`):
+
 - Fetches all bundle products with their items
 - Uses a complex SQL query to join relevant tables
 - Returns formatted bundle data including:
@@ -204,6 +205,7 @@ I've created a new API endpoint at `app/api/bundle/route.ts` that handles both G
   - Items (with product IDs and quantities)
 
 2. **POST Endpoint** (`/api/bundle`):
+
 - Creates a new bundle product
 - Required fields in request body:
   ```typescript
@@ -226,32 +228,35 @@ I've created a new API endpoint at `app/api/bundle/route.ts` that handles both G
 Example usage:
 
 1. To get all bundles:
+
 ```typescript
-const response = await fetch('/api/bundle')
-const bundles = await response.json()
+const response = await fetch("/api/bundle");
+const bundles = await response.json();
 ```
 
 2. To create a new bundle:
+
 ```typescript
-const response = await fetch('/api/bundle', {
-  method: 'POST',
+const response = await fetch("/api/bundle", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json'
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    name: 'Lesa Komplekt',
+    name: "Lesa Komplekt",
     price: 4500,
     items: [
       { product_id: 64, quantity: 2 }, // Nojka
       { product_id: 65, quantity: 2 }, // Plus
-      { product_id: 15, quantity: 2 }  // Taxta
-    ]
-  })
-})
-const newBundle = await response.json()
+      { product_id: 15, quantity: 2 }, // Taxta
+    ],
+  }),
+});
+const newBundle = await response.json();
 ```
 
 The API follows the same structure as seen in your SQL example, creating all necessary records and relationships for a bundle product. It handles:
+
 - Bundle product creation
 - Bundle items association
 - Proper meta data storage
@@ -265,7 +270,7 @@ Let me know if you need any clarification or have questions about specific parts
 
 _**User**_
 
-@route.ts uchun postman curl yarat 
+@route.ts uchun postman curl yarat
 
 ---
 
@@ -274,12 +279,14 @@ _**Assistant**_
 Men sizga bundle API uchun Postman CURL so'rovlarini yaratib beraman. Har ikkala endpoint (GET va POST) uchun alohida CURL so'rovlarini tayyorlayman:
 
 1. **GET so'rovi** (Barcha bundle mahsulotlarni olish):
+
 ```bash
 curl --location 'http://localhost:3000/api/bundle' \
 --header 'Accept: application/json'
 ```
 
 2. **POST so'rovi** (Yangi bundle mahsulot yaratish):
+
 ```bash
 curl --location 'http://localhost:3000/api/bundle' \
 --header 'Content-Type: application/json' \
@@ -306,88 +313,95 @@ curl --location 'http://localhost:3000/api/bundle' \
 Postman uchun qo'shimcha ma'lumotlar:
 
 **GET /api/bundle**
+
 - Method: GET
 - URL: `http://localhost:3000/api/bundle`
 - Headers:
   - Accept: application/json
 - Response format:
+
 ```json
 [
-    {
-        "id": "66",
-        "name": "Lesa Komplekt",
-        "price": 4500,
-        "items": [
-            {
-                "product_id": 64,
-                "quantity": 2
-            },
-            {
-                "product_id": 65,
-                "quantity": 2
-            },
-            {
-                "product_id": 15,
-                "quantity": 2
-            }
-        ]
-    }
+  {
+    "id": "66",
+    "name": "Lesa Komplekt",
+    "price": 4500,
+    "items": [
+      {
+        "product_id": 64,
+        "quantity": 2
+      },
+      {
+        "product_id": 65,
+        "quantity": 2
+      },
+      {
+        "product_id": 15,
+        "quantity": 2
+      }
+    ]
+  }
 ]
 ```
 
 **POST /api/bundle**
+
 - Method: POST
 - URL: `http://localhost:3000/api/bundle`
 - Headers:
   - Content-Type: application/json
 - Request Body:
+
 ```json
 {
-    "name": "Lesa Komplekt",
-    "price": 4500,
-    "items": [
-        {
-            "product_id": 64,
-            "quantity": 2
-        },
-        {
-            "product_id": 65,
-            "quantity": 2
-        },
-        {
-            "product_id": 15,
-            "quantity": 2
-        }
-    ]
+  "name": "Lesa Komplekt",
+  "price": 4500,
+  "items": [
+    {
+      "product_id": 64,
+      "quantity": 2
+    },
+    {
+      "product_id": 65,
+      "quantity": 2
+    },
+    {
+      "product_id": 15,
+      "quantity": 2
+    }
+  ]
 }
 ```
+
 - Response format:
+
 ```json
 {
-    "id": "139",
-    "name": "Lesa Komplekt",
-    "price": 4500,
-    "items": [
-        {
-            "product_id": 64,
-            "quantity": 2
-        },
-        {
-            "product_id": 65,
-            "quantity": 2
-        },
-        {
-            "product_id": 15,
-            "quantity": 2
-        }
-    ]
+  "id": "139",
+  "name": "Lesa Komplekt",
+  "price": 4500,
+  "items": [
+    {
+      "product_id": 64,
+      "quantity": 2
+    },
+    {
+      "product_id": 65,
+      "quantity": 2
+    },
+    {
+      "product_id": 15,
+      "quantity": 2
+    }
+  ]
 }
 ```
 
 Xatolik holatida response:
+
 ```json
 {
-    "error": "Failed to create bundle"
+  "error": "Failed to create bundle"
 }
 ```
 
@@ -427,6 +441,7 @@ Xatolik `wp_posts` jadvalida `to_ping` maydoni talab qilinayotgan ekan, lekin bi
 ---
 
 Men `wp_posts` jadvaliga qo'shimcha majburiy maydonlarni qo'shdim:
+
 - `to_ping`
 - `pinged`
 - `post_password`
@@ -445,19 +460,19 @@ Endi TypeScript linter xatolarini ham to'g'irlaymiz:
   import { NextResponse } from 'next/server'
   import { prisma } from '@/lib/prisma'
 + import { PrismaClient } from '@prisma/client'
-+ 
++
 + interface Bundle {
 +   id: bigint
 +   name: string
 +   price: number
 +   items: string
 + }
-+ 
++
 + interface BundleItem {
 +   product_id: number
 +   quantity: number
 + }
-  
+
   // Get all bundle products
   export async function GET() {
     try {
@@ -469,10 +484,10 @@ Endi TypeScript linter xatolarini ham to'g'irlaymiz:
 -       items: string // Serialized bundle items
 -     }>>`
 +     const bundles = await prisma.$queryRaw<Bundle[]>`
-        SELECT 
+        SELECT
           p.ID as id,
       `
-  
+
 -     const formattedBundles = bundles.map(bundle => ({
 +     const formattedBundles = bundles.map((bundle: Bundle) => ({
         id: bundle.id.toString(),
@@ -481,9 +496,9 @@ Endi TypeScript linter xatolarini ham to'g'irlaymiz:
       const body = await request.json()
 -     const { name, price, items } = body
 +     const { name, price, items } = body as { name: string; price: number; items: BundleItem[] }
-  
+
       if (!name || !price || !items || !Array.isArray(items) || items.length === 0) {
-  
+
       // Create bundle using Prisma transaction
 -     const result = await prisma.$transaction(async (tx) => {
 +     const result = await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
@@ -494,7 +509,9 @@ Endi TypeScript linter xatolarini ham to'g'irlaymiz:
 ---
 
 Qo'shilgan o'zgarishlar:
+
 1. TypeScript interfacelar qo'shildi:
+
    - `Bundle` - bundle mahsulot uchun
    - `BundleItem` - bundle ichidagi mahsulotlar uchun
 
@@ -513,7 +530,7 @@ Endi yana bir xatolik bor - `PrismaClient` import qilishda muammo. Buni to'g'irl
   import { prisma } from '@/lib/prisma'
 - import { PrismaClient } from '@prisma/client'
 + import type { PrismaClient } from '.prisma/client'
-  
+
   interface Bundle {
 ```
 
@@ -560,7 +577,7 @@ curl --location 'http://localhost:3000/api/bundle'
 
 _**User**_
 
-bunda bundle ni postga emas orderga create qilishi kerak, huddi oddiy order kabi faqat bundle itemlarini boshqa tablelarga saqlanadi @example.sql  orqali query ma'lumotlarini ko'r bitta route da bo'lishi kerak  
+bunda bundle ni postga emas orderga create qilishi kerak, huddi oddiy order kabi faqat bundle itemlarini boshqa tablelarga saqlanadi @example.sql orqali query ma'lumotlarini ko'r bitta route da bo'lishi kerak
 
 ---
 
@@ -573,7 +590,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 ```diff
     }
   }
-+ 
++
 + interface OrderItem {
 +   product_id: number;
 +   quantity: number;
@@ -584,17 +601,17 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 +     quantity: number;
 +   }>;
 + }
-  
+
   export async function POST(request: Request) {
-  
+
       // Calculate total amount from products
 -     const totalAmount = products.reduce((total, product) => total + (product.price * product.quantity), 0);
-+     const totalAmount = products.reduce((total, product: OrderItem) => 
++     const totalAmount = products.reduce((total, product: OrderItem) =>
 +       total + (product.price * product.quantity), 0);
-  
+
       // Create order using Prisma transaction
         });
-  
+
 -       // 4. Create order items
 +       // 4. Create order items and handle bundles
         for (const product of products) {
@@ -606,7 +623,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
               order_id: order.id
             }
           });
-  
+
 -         // 5. Create order item meta
 -         await tx.wp_woocommerce_order_itemmeta.createMany({
 -           data: [
@@ -624,13 +641,13 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 -           ]
 -         });
 +         ];
-+ 
++
 +         // If this is a bundle product, add bundle-specific meta
 +         if (product.isBundle && product.bundleItems) {
 +           const bundleCartKey = Math.random().toString(36).substring(2, 15);
-+           const bundledItemsKeys = product.bundleItems.map(() => 
++           const bundledItemsKeys = product.bundleItems.map(() =>
 +             Math.random().toString(36).substring(2, 15));
-+ 
++
 +           // Add bundle meta
 +           baseItemMeta.push(
 +             {
@@ -649,7 +666,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 +               meta_value: bundleCartKey
 +             }
 +           );
-  
+
 -         // 6. Update product stock if needed
 -         if (product.updateStock) {
 +           // Create bundled items
@@ -661,7 +678,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 +                 order_id: order.id
 +               }
 +             });
-+ 
++
 +             // Add bundled item meta
 +             await tx.wp_woocommerce_order_itemmeta.createMany({
 +               data: [
@@ -732,7 +749,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 +                 }
 +               ]
 +             });
-+ 
++
 +             // Update stock for bundled item
 +             await tx.wp_wc_product_meta_lookup.update({
 +               where: { product_id: BigInt(bundleItem.product_id) },
@@ -747,12 +764,12 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 +             });
 +           }
 +         }
-+ 
++
 +         // Create order item meta
 +         await tx.wp_woocommerce_order_itemmeta.createMany({
 +           data: baseItemMeta
 +         });
-+ 
++
 +         // Update product stock if not a bundle
 +         if (!product.isBundle) {
             await tx.wp_wc_product_meta_lookup.update({
@@ -762,7 +779,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
                 stock_quantity: {
           }
         }
-- 
+-
 -       // 7. Add basic order meta
 -       await tx.wp_wc_orders_meta.createMany({
 -         data: [
@@ -778,7 +795,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 -           }
 -         ]
 -       });
-  
+
         return {
 ```
 
@@ -787,6 +804,7 @@ Tushundim, bundle orderlarni yaratish uchun `order` API ni kengaytiramiz. `examp
 Men order API ni bundle mahsulotlarni qo'llab-quvvatlash uchun kengaytirdim. Asosiy o'zgarishlar:
 
 1. `OrderItem` interfeysi qo'shildi:
+
 ```typescript
 interface OrderItem {
   product_id: number;
@@ -801,6 +819,7 @@ interface OrderItem {
 ```
 
 2. Bundle mahsulotlar uchun qo'shimcha ma'lumotlar saqlash:
+
 - Bundle meta ma'lumotlari
 - Bundle ichidagi mahsulotlar
 - Bundle mahsulotlar uchun maxsus narx va miqdor
@@ -849,6 +868,7 @@ curl --location 'http://localhost:3000/api/order' \
 ```
 
 Bu so'rov:
+
 1. Bundle mahsulot (Lesa Komplekt) yaratadi:
    - 2ta Nojka (#64)
    - 2ta Plus (#65)
@@ -856,6 +876,7 @@ Bu so'rov:
 2. Qo'shimcha 1ta Plus (#65) mahsulot qo'shadi
 
 API barcha kerakli ma'lumotlarni saqlaydi:
+
 - Bundle mahsulot va uning tarkibidagi mahsulotlar
 - Har bir mahsulot uchun narx va miqdor
 - Bundle mahsulotlar uchun maxsus meta ma'lumotlar
@@ -869,7 +890,7 @@ TypeScript linter xatolarini ham to'g'irlaymiz:
   import { NextResponse } from "next/server";
   import { prisma } from "@/lib/prisma";
 + import type { PrismaClient } from '.prisma/client'
-  
+
 - export async function GET() {
 -   try {
 -     const orders = await prisma.$queryRaw<
@@ -882,7 +903,7 @@ TypeScript linter xatolarini ham to'g'irlaymiz:
 -       }>
 -     >`
 + }
-+ 
++
 + interface OrderItem {
 +   product_id: number;
 +   quantity: number;
@@ -895,21 +916,21 @@ TypeScript linter xatolarini ham to'g'irlaymiz:
 +     quantity: number;
 +   }>;
 + }
-+ 
++
 + export async function GET() {
 +   try {
 +     const orders = await prisma.$queryRaw<Order[]>`
         SELECT o.id, o.date_created_gmt, o.status, o.total_amount, oa.first_name, oa.last_name
         FROM wp_wc_orders o
       `;
-  
+
 -     const formattedOrders = orders.map((order) => ({
 +     const formattedOrders = orders.map((order: Order) => ({
         id: order.id.toString(),
         number: `#ORD-${order.id.toString().padStart(3, "0")}`,
     }
   }
-- 
+-
 - interface OrderItem {
 -   product_id: number;
 -   quantity: number;
@@ -920,9 +941,9 @@ TypeScript linter xatolarini ham to'g'irlaymiz:
 -     quantity: number;
 -   }>;
 - }
-  
+
   export async function POST(request: Request) {
-  
+
       // Create order using Prisma transaction
 -     const result = await prisma.$transaction(async (tx) => {
 +     const result = await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
@@ -985,6 +1006,7 @@ curl --location 'http://localhost:3000/api/order' \
 ```
 
 Bu so'rov:
+
 1. Bundle mahsulot yaratadi
 2. Bundle ichidagi mahsulotlarni saqlaydi
 3. Qo'shimcha oddiy mahsulotni qo'shadi
@@ -1007,8 +1029,8 @@ Xatolik `wp_wc_product_meta_lookup` jadvalida ma'lumot topilmaganidan kelib chiq
 
 // Update stock for bundled item
 await tx.wp_wc_product_meta_lookup.upsert({
-  where: { 
-    product_id: BigInt(bundleItem.product_id) 
+  where: {
+    product_id: BigInt(bundleItem.product_id)
   },
   create: {
     product_id: BigInt(bundleItem.product_id),
@@ -1036,8 +1058,8 @@ await tx.wp_wc_product_meta_lookup.upsert({
 // Update product stock if not a bundle
 if (!product.isBundle) {
   await tx.wp_wc_product_meta_lookup.upsert({
-    where: { 
-      product_id: BigInt(product.product_id) 
+    where: {
+      product_id: BigInt(product.product_id)
     },
     create: {
       product_id: BigInt(product.product_id),
@@ -1063,18 +1085,17 @@ if (!product.isBundle) {
 ```
 
 O'zgarishlar:
+
 1. `update` o'rniga `upsert` operatsiyasini ishlatamiz
 2. Agar mahsulot meta ma'lumotlari mavjud bo'lmasa, `create` orqali yangi yozuv yaratamiz
 3. Agar mavjud bo'lsa, `update` orqali stock va sales ma'lumotlarini yangilaymiz
 
 Bu o'zgarishlar bilan:
+
 - Yangi mahsulotlar uchun meta ma'lumotlar avtomatik yaratiladi
 - Mavjud mahsulotlar uchun stock va sales ma'lumotlari yangilanadi
 - Xatolik boshqa takrorlanmaydi
 
 ---
 
-
-
 ---
-

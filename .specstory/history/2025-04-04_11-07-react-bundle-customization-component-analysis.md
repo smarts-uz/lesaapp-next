@@ -15,11 +15,13 @@ I'll analyze the code and explain its key aspects:
 This is a React component called `BundleCustomizationDialog` that implements a dialog for customizing product bundles in a Point of Sale (POS) system. Here are the main features and implementation details:
 
 1. **Component Structure**:
+
 - It's a client-side component (marked with "use client")
 - Uses several UI components from what appears to be a Shadcn UI library
 - Implements a dialog interface for bundle customization
 
 2. **Key Features**:
+
 - Bundle quantity management
 - Individual item quantity controls
 - Compatibility warnings for scaffold components
@@ -29,28 +31,37 @@ This is a React component called `BundleCustomizationDialog` that implements a d
 - Tooltips for additional information
 
 3. **State Management**:
+
 ```typescript
-const [customizedItems, setCustomizedItems] = useState<CustomizedBundleItem[]>([]);
+const [customizedItems, setCustomizedItems] = useState<CustomizedBundleItem[]>(
+  [],
+);
 const [bundleQuantity, setBundleQuantity] = useState(1);
-const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
+const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>(
+  [],
+);
 ```
 
 4. **Smart Validation**:
+
 - Implements compatibility checks for scaffold components (frames, braces, platforms, guardrails)
 - Enforces minimum and maximum quantity constraints
 - Validates stock levels
 
 5. **Reusable Components**:
+
 - `QuantityControl`: A reusable component for quantity adjustment
 - `BundleItem`: Component for displaying individual bundle items
 - `CompatibilityWarnings`: Component for showing compatibility issues
 
 6. **Performance Optimizations**:
+
 - Uses `useMemo` for calculated values
 - Implements `useCallback` for event handlers
 - Efficient state updates and calculations
 
 7. **UX Features**:
+
 - Responsive design
 - Clear visual hierarchy
 - Informative tooltips
@@ -59,6 +70,7 @@ const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([])
 - Clear warning messages
 
 8. **Business Logic**:
+
 - Handles bundle pricing
 - Manages component relationships
 - Enforces business rules (like scaffold component compatibility)
@@ -70,7 +82,4 @@ Would you like me to dive deeper into any particular aspect of the code?
 
 ---
 
-
-
 ---
-

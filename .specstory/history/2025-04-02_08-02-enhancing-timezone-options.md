@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll add more timezone options to the settings page. I'll edit the timezone select component to include a comprehensive list of common timezones.
 
-
 ---
 
 ```diff
@@ -54,7 +53,4 @@ I've added a comprehensive list of timezones covering all major regions from UTC
 
 ---
 
-
-
 ---
-

@@ -4,7 +4,7 @@
 
 _**User**_
 
-Fix the bundled items pricing make it the same as in modal @in-cart-bundle-editor.tsx 
+Fix the bundled items pricing make it the same as in modal @in-cart-bundle-editor.tsx
 
 ---
 
@@ -13,7 +13,6 @@ _**Assistant**_
 Let me check the pricing display in both components and make them consistent.
 
 I'll edit the `cart-item.tsx` to match the pricing display format from `in-cart-bundle-editor.tsx`.
-
 
 ---
 
@@ -32,6 +31,7 @@ I'll edit the `cart-item.tsx` to match the pricing display format from `in-cart-
 ---
 
 I've updated the price display in `cart-item.tsx` to match the format in `in-cart-bundle-editor.tsx`. Now it shows:
+
 1. The individual item price in muted text
 2. The quantity multiplier
 3. Consistent text size and styling
@@ -40,7 +40,4 @@ The pricing display is now consistent between both components.
 
 ---
 
-
-
 ---
-

@@ -14,7 +14,6 @@ I'll help you fix the linter error by converting the bigint value to a number. T
 
 Let me examine the code to understand the context better.
 
-
 ---
 
 Read file: lib/woocommerce/orders.ts
@@ -23,7 +22,6 @@ Read file: lib/woocommerce/orders.ts
 
 Let me check the `processRefunds` function to understand its parameters:
 
-
 ---
 
 Read file: lib/woocommerce/orders.ts
@@ -31,7 +29,6 @@ Read file: lib/woocommerce/orders.ts
 ---
 
 I see the issue now. The `processRefunds` function is actually defined to accept a `bigint` parameter for `totalAmount`, but there's a type mismatch in the implementation. Let me fix this by editing the file:
-
 
 ---
 
@@ -49,6 +46,7 @@ I see the issue now. The `processRefunds` function is actually defined to accept
 The fix has been applied. I've modified the comparison in the `processRefunds` function to convert both `refund.amount` and `totalAmount` to numbers using the `Number()` function before comparing them. This resolves the type mismatch error.
 
 The change ensures that:
+
 1. The `bigint` value of `totalAmount` is properly converted to a number
 2. The `refund.amount` is also converted to a number for a proper comparison
 3. The comparison now works correctly regardless of whether the values are strings, numbers, or bigints
@@ -60,9 +58,11 @@ This approach is safer than using direct comparison between different numeric ty
 _**User**_
 
 For the code present, we get this error:
+
 ```
 Argument of type 'bigint' is not assignable to parameter of type 'number'.
 ```
+
 How can I resolve this? If you propose a fix, please make it concise.
 
 ---
@@ -73,15 +73,14 @@ I see the issue. The error occurs because `order.total_amount` is a `bigint` but
 
 Let me fix this by converting the `bigint` to a `number` when calling the function:
 
-
 ---
 
 ```diff
-  
+
       // Process refunds
 -     const refunds = processRefunds(order.orderRefunds, order.id, order.total_amount);
 +     const refunds = processRefunds(order.orderRefunds, order.id, Number(order.total_amount));
-  
+
       // Check for compatibility warnings
    * @returns Processed refunds
    */
@@ -104,14 +103,13 @@ This resolves the type mismatch error while maintaining the functionality of the
 
 _**User**_
 
-@woocommerce delete code related to discounts & bookings 
+@woocommerce delete code related to discounts & bookings
 
 ---
 
 _**Assistant**_
 
 I'll help you delete the code related to discounts and bookings from the WooCommerce module. Let me first check the content of these files to understand what needs to be removed.
-
 
 ---
 
@@ -129,8 +127,6 @@ Read file: lib/woocommerce/index.ts
 
 Now I'll delete the files and update the index.ts file to remove the exports:
 
-
-
 ---
 
 Cancelled
@@ -139,13 +135,11 @@ Cancelled
 
 Let me try a different approach by editing the files to remove their content and then updating the index.ts file:
 
-
-
 ---
 
 ```diff
-- 
-+ // This file has been deprecated and will be removed in a future update. 
+-
++ // This file has been deprecated and will be removed in a future update.
 ```
 
 ---
@@ -154,11 +148,6 @@ Cancelled
 
 ---
 
-
-
 ---
 
-
-
 ---
-

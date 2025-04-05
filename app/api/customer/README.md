@@ -28,7 +28,7 @@ Retrieves a paginated list of customers.
       "firstName": "John",
       "lastName": "Doe",
       "dateRegistered": "2023-06-15T10:30:00.000Z"
-    },
+    }
     // Additional customers...
   ],
   "pagination": {
@@ -142,6 +142,7 @@ Creates a new customer in the WooCommerce/WordPress database.
 ```
 
 Required fields:
+
 - `username`
 - `password`
 - `email`
@@ -171,7 +172,14 @@ Required fields:
 ```json
 {
   "error": "Required fields missing",
-  "requiredFields": ["username", "password", "email", "firstName", "lastName", "phone"]
+  "requiredFields": [
+    "username",
+    "password",
+    "email",
+    "firstName",
+    "lastName",
+    "phone"
+  ]
 }
 ```
 
@@ -208,4 +216,4 @@ The implementation follows WordPress and WooCommerce customer creation flow:
 4. Initializes an empty shopping cart
 5. Updates the user count in WordPress options
 
-The entire operation is performed in a database transaction to ensure data consistency. 
+The entire operation is performed in a database transaction to ensure data consistency.

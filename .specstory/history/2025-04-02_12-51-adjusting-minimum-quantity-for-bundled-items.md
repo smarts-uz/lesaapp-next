@@ -4,7 +4,7 @@
 
 _**User**_
 
-Set minimum quantity from defualt min for bundled items 
+Set minimum quantity from defualt min for bundled items
 
 ---
 
@@ -15,7 +15,6 @@ I'll help you modify the bundle customization dialog to set the minimum quantity
 Looking at the code, I can see that the `BundleCustomizationDialog` component initializes customized items when the dialog opens, but it doesn't currently set the minimum quantity based on the default minimum for bundled items.
 
 Let me modify the code to implement this feature:
-
 
 ---
 
@@ -37,6 +36,7 @@ I've updated the code to ensure that the minimum quantity for bundled items is p
    - `maxQuantity: item.maxQuantity || 999` - This sets the maximum quantity to the item's default maximum quantity, or 999 if not specified
 
 This ensures that:
+
 - Each bundled item will have a proper minimum quantity value from its default settings
 - If no minimum quantity is specified, it will default to 1
 - The same applies to maximum quantity, defaulting to 999 if not specified
@@ -47,7 +47,4 @@ Is there anything else you'd like me to modify or explain about this implementat
 
 ---
 
-
-
 ---
-

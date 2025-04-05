@@ -13,4 +13,4 @@ export function POSHeader({ title }: POSHeaderProps) {
       </div>
     </div>
   );
-} 
+}

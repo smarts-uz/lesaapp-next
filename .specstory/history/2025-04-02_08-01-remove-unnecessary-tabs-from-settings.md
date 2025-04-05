@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll help you modify the settings page to only keep the general tab. I'll edit the file to remove the other tabs and their content.
 
-
 ---
 
 ```diff
@@ -25,10 +24,10 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
   import { Separator } from "@/components/ui/separator"
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 - import { Building2, CreditCard, Store, Bell } from "lucide-react"
-  
+
   export default function SettingsPage() {
         </div>
-  
+
 -       <Tabs defaultValue="general" className="w-full">
 -         <TabsList className="mb-4">
 -           <TabsTrigger value="general">General</TabsTrigger>
@@ -37,7 +36,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -           <TabsTrigger value="payment">Payment</TabsTrigger>
 -           <TabsTrigger value="notifications">Notifications</TabsTrigger>
 -         </TabsList>
-- 
+-
 -         <TabsContent value="general" className="space-y-4">
 -           <Card>
 -             <CardHeader>
@@ -81,7 +80,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 +                   </SelectContent>
 +                 </Select>
 +               </div>
-  
+
 -                   <div className="space-y-2">
 -                     <Label htmlFor="timezone">Timezone</Label>
 -                     <Select defaultValue="utc-5">
@@ -112,7 +111,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 +                 </Select>
 +               </div>
 +             </div>
-  
+
 -                 <div className="space-y-2">
 -                   <Label htmlFor="currency">Currency</Label>
 -                   <Select value={currency} onValueChange={handleCurrencyChange}>
@@ -143,7 +142,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 +                 </SelectContent>
 +               </Select>
 +             </div>
-  
+
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="dark-mode">Dark Mode</Label>
@@ -160,17 +159,17 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 +               <Switch id="dark-mode" />
 +             </div>
 +           </div>
-  
+
 -               <Separator />
 +           <Separator />
-  
+
 -               <div className="flex justify-end">
 -                 <Button>Save Changes</Button>
 -               </div>
 -             </CardContent>
 -           </Card>
 -         </TabsContent>
-- 
+-
 -         <TabsContent value="company" className="space-y-4">
 -           <Card>
 -             <CardHeader>
@@ -187,34 +186,34 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                     <Label htmlFor="company-name">Company Name</Label>
 -                     <Input id="company-name" placeholder="Your Construction Company" />
 -                   </div>
-- 
+-
 -                   <div className="space-y-2">
 -                     <Label htmlFor="tax-id">Tax ID / EIN</Label>
 -                     <Input id="tax-id" placeholder="XX-XXXXXXX" />
 -                   </div>
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="address">Address</Label>
 -                   <Input id="address" placeholder="Street Address" />
 -                 </div>
-- 
+-
 -                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 -                   <div className="space-y-2">
 -                     <Label htmlFor="city">City</Label>
 -                     <Input id="city" placeholder="City" />
 -                   </div>
-- 
+-
 -                   <div className="space-y-2">
 -                     <Label htmlFor="state">State</Label>
 -                     <Input id="state" placeholder="State" />
 -                   </div>
-- 
+-
 -                   <div className="space-y-2">
 -                     <Label htmlFor="zip">ZIP Code</Label>
 -                     <Input id="zip" placeholder="ZIP Code" />
 -                   </div>
-- 
+-
 -                   <div className="space-y-2">
 -                     <Label htmlFor="country">Country</Label>
 -                     <Select defaultValue="us">
@@ -229,39 +228,39 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                     </Select>
 -                   </div>
 -                 </div>
-- 
+-
 -                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 -                   <div className="space-y-2">
 -                     <Label htmlFor="phone">Phone Number</Label>
 -                     <Input id="phone" placeholder="(XXX) XXX-XXXX" />
 -                   </div>
-- 
+-
 -                   <div className="space-y-2">
 -                     <Label htmlFor="email">Email</Label>
 -                     <Input id="email" type="email" placeholder="contact@yourcompany.com" />
 -                   </div>
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="website">Website</Label>
 -                   <Input id="website" placeholder="https://yourcompany.com" />
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="license">Contractor License Number</Label>
 -                   <Input id="license" placeholder="License Number" />
 -                 </div>
 -               </div>
-- 
+-
 -               <Separator />
-- 
+-
 -               <div className="flex justify-end">
 -                 <Button>Save Company Information</Button>
 -               </div>
 -             </CardContent>
 -           </Card>
 -         </TabsContent>
-- 
+-
 -         <TabsContent value="pos" className="space-y-4">
 -           <Card>
 -             <CardHeader>
@@ -280,12 +279,12 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="auto-tax" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="tax-rate">Tax Rate (%)</Label>
 -                   <Input id="tax-rate" type="number" defaultValue="10.0" />
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="receipt-template">Receipt Template</Label>
 -                   <Select defaultValue="standard">
@@ -299,7 +298,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                     </SelectContent>
 -                   </Select>
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="bundle-discount">Automatic Bundle Discount</Label>
@@ -307,7 +306,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="bundle-discount" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="compatibility-check">Compatibility Warnings</Label>
@@ -318,16 +317,16 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   <Switch id="compatibility-check" defaultChecked />
 -                 </div>
 -               </div>
-- 
+-
 -               <Separator />
-- 
+-
 -               <div className="flex justify-end">
 -                 <Button>Save POS Settings</Button>
 -               </div>
 -             </CardContent>
 -           </Card>
 -         </TabsContent>
-- 
+-
 -         <TabsContent value="payment" className="space-y-4">
 -           <Card>
 -             <CardHeader>
@@ -346,7 +345,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="credit-card" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="cash">Cash Payments</Label>
@@ -354,7 +353,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="cash" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="invoice">Invoice Payments</Label>
@@ -362,7 +361,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="invoice" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="payment-processor">Payment Processor</Label>
 -                   <Select defaultValue="stripe">
@@ -376,22 +375,22 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                     </SelectContent>
 -                   </Select>
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="api-key">API Key</Label>
 -                   <Input id="api-key" type="password" value="••••••••••••••••" />
 -                 </div>
 -               </div>
-- 
+-
 -               <Separator />
-- 
+-
 -               <div className="flex justify-end">
 -                 <Button>Save Payment Settings</Button>
 -               </div>
 -             </CardContent>
 -           </Card>
 -         </TabsContent>
-- 
+-
 -         <TabsContent value="notifications" className="space-y-4">
 -           <Card>
 -             <CardHeader>
@@ -410,7 +409,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="order-notifications" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="low-stock">Low Stock Alerts</Label>
@@ -418,7 +417,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="low-stock" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="flex items-center justify-between">
 -                   <div className="space-y-0.5">
 -                     <Label htmlFor="customer-emails">Customer Email Notifications</Label>
@@ -426,15 +425,15 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 -                   </div>
 -                   <Switch id="customer-emails" defaultChecked />
 -                 </div>
-- 
+-
 -                 <div className="space-y-2">
 -                   <Label htmlFor="notification-email">Notification Email</Label>
 -                   <Input id="notification-email" type="email" placeholder="alerts@yourcompany.com" />
 -                 </div>
 -               </div>
-- 
+-
 -               <Separator />
-- 
+-
 -               <div className="flex justify-end">
 -                 <Button>Save Notification Settings</Button>
 -               </div>
@@ -454,6 +453,7 @@ I'll help you modify the settings page to only keep the general tab. I'll edit t
 ---
 
 I've modified the settings page to only keep the general tab content. The changes include:
+
 1. Removed all other tabs (company, POS, payment, notifications)
 2. Removed unused imports (Tabs components and Lucide icons)
 3. Simplified the structure by removing the tabs wrapper
@@ -463,7 +463,4 @@ The page now shows only the general settings with language, timezone, currency, 
 
 ---
 
-
-
 ---
-

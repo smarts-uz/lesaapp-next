@@ -26,9 +26,13 @@ export function getOrderBundleItems(order: Order): OrderBundleItem[] {
 
   // Extract all bundle items from all order items
   const bundleItems: OrderBundleItem[] = [];
-  
-  order.items.forEach(item => {
-    if (item.type === 'bundle' && item.bundleItems && item.bundleItems.length > 0) {
+
+  order.items.forEach((item) => {
+    if (
+      item.type === "bundle" &&
+      item.bundleItems &&
+      item.bundleItems.length > 0
+    ) {
       bundleItems.push(...item.bundleItems);
     }
   });
@@ -47,7 +51,7 @@ export function getRefundableItems(order: Order): OrderItem[] {
   }
 
   // Return only items that are refundable
-  return order.items.filter(item => item.refundable);
+  return order.items.filter((item) => item.refundable);
 }
 
 /**
@@ -62,12 +66,17 @@ export function getRefundableBundleItems(order: Order): OrderBundleItem[] {
 
   // Extract all bundle items from refundable order items
   const refundableBundleItems: OrderBundleItem[] = [];
-  
-  order.items.forEach(item => {
-    if (item.refundable && item.type === 'bundle' && item.bundleItems && item.bundleItems.length > 0) {
+
+  order.items.forEach((item) => {
+    if (
+      item.refundable &&
+      item.type === "bundle" &&
+      item.bundleItems &&
+      item.bundleItems.length > 0
+    ) {
       refundableBundleItems.push(...item.bundleItems);
     }
   });
 
   return refundableBundleItems;
-} 
+}

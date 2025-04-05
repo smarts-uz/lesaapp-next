@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll help you modify the theme settings to default to dark mode. I'll need to check the theme provider configuration first.
 
-
 ---
 
 <details>
@@ -49,7 +48,6 @@ I'll help you modify the theme settings to default to dark mode. I'll need to ch
 ---
 
 Let me check the theme provider configuration to set the default theme to dark mode.
-
 
 ---
 
@@ -88,16 +86,15 @@ Let me check the theme provider configuration to set the default theme to dark m
 
 I'll modify the theme provider to set dark mode as the default theme. Let me edit the theme provider component.
 
-
 ---
 
 ```diff
-  
+
   export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 -   return <NextThemesProvider {...props}>{children}</NextThemesProvider>
 +   return <NextThemesProvider defaultTheme="dark" {...props}>{children}</NextThemesProvider>
   }
-  
+
 ```
 
 ---
@@ -111,7 +108,6 @@ enable theme switching
 _**Assistant**_
 
 I'll help you enable theme switching by adding the ThemeProvider to the root layout. Let me check the current layout configuration.
-
 
 ---
 
@@ -150,14 +146,13 @@ I'll help you enable theme switching by adding the ThemeProvider to the root lay
 
 I'll modify the root layout to include the ThemeProvider. Let me edit the layout file.
 
-
 ---
 
 ```diff
   import type { Metadata } from "next"
   import { Geist, Geist_Mono } from "next/font/google"
 + import { ThemeProvider } from "@/components/theme-provider"
-  
+
   const geistSans = Geist({
   }>) {
     return (
@@ -175,8 +170,6 @@ I'll modify the root layout to include the ThemeProvider. Let me edit the layout
 
 ---
 
-
-
 ---
 
 _**User**_
@@ -189,7 +182,6 @@ _**Assistant**_
 
 Let me check the theme switching implementation in the header component and fix any issues.
 
-
 ---
 
 Read file: components/dashboard/header.tsx
@@ -197,7 +189,6 @@ Read file: components/dashboard/header.tsx
 ---
 
 Let me check the theme provider configuration.
-
 
 ---
 
@@ -207,17 +198,15 @@ Read file: components/theme-provider.tsx
 
 I see the issue. We need to add the `attribute` prop to the ThemeProvider to properly apply the theme class to the HTML element. Let me fix that.
 
-
-
 ---
 
 ```diff
-  
+
   export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 -   return <NextThemesProvider defaultTheme="dark" {...props}>{children}</NextThemesProvider>
 +   return <NextThemesProvider attribute="class" defaultTheme="dark" {...props}>{children}</NextThemesProvider>
   }
-  
+
 ```
 
 ---
@@ -240,46 +229,42 @@ It can also happen if the client has a browser extension installed which messes 
 
 See more info here: https://nextjs.org/docs/messages/react-hydration-error
 
+...
+<MenuProvider scope={{Menu:[...], ...}} onClose={function Menu.useCallback} isUsingKeyboardRef={{current:false}} ...>
+<DropdownMenuTrigger asChild={true} className="">
+<MenuAnchor asChild={true} **scopeMenu={{Menu:[...], ...}}>
+<PopperAnchor **scopePopper={{Menu:[...], ...}} asChild={true} ref={null}>
+<Primitive.div asChild={true} ref={function}>
+<Slot ref={function}>
+<SlotClone ref={function}>
+<Primitive.button type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
+<Slot type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
+<SlotClone type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
+<\_c variant="ghost" size="icon" className="w-10" type="button" id="radix-«R2d..." ...>
+<button className={"inline-f..."} ref={function} type="button" id="radix-«R2d..." ...>
+<Moon className="size-6">
+<\_c ref={null} iconNode={[...]} className="lucide-moo...">
+<svg
+ref={null}
+xmlns="http://www.w3.org/2000/svg"
+width={24}
+height={24}
+viewBox="0 0 24 24"
+fill="none"
+stroke="currentColor"
+strokeWidth={2}
+strokeLinecap="round"
+strokeLinejoin="round"
 
-  ...
-    <MenuProvider scope={{Menu:[...], ...}} onClose={function Menu.useCallback} isUsingKeyboardRef={{current:false}} ...>
-      <DropdownMenuTrigger asChild={true} className="">
-        <MenuAnchor asChild={true} __scopeMenu={{Menu:[...], ...}}>
-          <PopperAnchor __scopePopper={{Menu:[...], ...}} asChild={true} ref={null}>
-            <Primitive.div asChild={true} ref={function}>
-              <Slot ref={function}>
-                <SlotClone ref={function}>
-                  <Primitive.button type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
-                    <Slot type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
-                      <SlotClone type="button" id="radix-«R2d..." aria-haspopup="menu" aria-expanded={false} ...>
-                        <_c variant="ghost" size="icon" className="w-10" type="button" id="radix-«R2d..." ...>
-                          <button className={"inline-f..."} ref={function} type="button" id="radix-«R2d..." ...>
-                            <Moon className="size-6">
-                              <_c ref={null} iconNode={[...]} className="lucide-moo...">
-                                <svg
-                                  ref={null}
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width={24}
-                                  height={24}
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-+                                 className="lucide lucide-moon size-6"
--                                 className="lucide lucide-sun size-6"
+-                                 className="lucide lucide-moon size-6"
+
+*                                 className="lucide lucide-sun size-6"
                                 >
 
 ---
 
 _**Assistant**_
 
-
-
 ---
 
-
-
 ---
-

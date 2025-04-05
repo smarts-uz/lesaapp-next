@@ -13,6 +13,7 @@ _**Assistant**_
 I see there's an error occurring in the order creation API route. Let me analyze the error and propose a solution.
 
 The error occurs when trying to update the product stock in the `wp_wc_product_meta_lookup` table. The specific error is:
+
 ```
 Record to update not found.
 ```
@@ -33,7 +34,7 @@ Let me modify the code to handle this case more gracefully. I'll first check if 
 +           const existingMeta = await tx.wp_wc_product_meta_lookup.findUnique({
 +             where: { product_id: BigInt(product.id) }
 +           })
-+ 
++
 +           if (existingMeta) {
 +             // Update existing record
               await tx.wp_wc_product_meta_lookup.update({
@@ -76,6 +77,7 @@ I've modified the code to handle cases where a product's meta lookup record does
    - Default values for other required fields
 
 This should resolve the error by ensuring we can handle both cases:
+
 - Products that already have meta lookup records
 - Products that don't have meta lookup records yet
 
@@ -85,7 +87,4 @@ Also, I notice there are some TypeScript linter errors in the file. Would you li
 
 ---
 
-
-
 ---
-

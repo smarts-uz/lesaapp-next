@@ -13,6 +13,7 @@ _**Assistant**_
 I understand you want to make the quantity control buttons work consistently across components, matching the implementation style and principles. Let me analyze the current implementations and help standardize them.
 
 I notice there are two different implementations of quantity controls:
+
 1. A `QuantityControl` component used in `bundle-customization-dialog.tsx`
 2. An inline quantity control in `cart-item.tsx`
 
@@ -70,7 +71,7 @@ I'll help standardize the quantity controls across the codebase. Let's start wit
   import { formatCurrency } from "@/lib/utils"
   import { InCartBundleEditor } from "./in-cart-bundle-editor"
 + import { QuantityControl } from "./quantity-control"
-  
+
   const calculateItemTotal = (item: CartItem) => {
             </div>
             <div className="flex items-center justify-between mt-1">
@@ -110,12 +111,12 @@ I see that we need to create the `QuantityControl` component as a separate reusa
 ---
 
 ```diff
-- 
+-
 + import { Button } from "@/components/ui/button"
 + import { Label } from "@/components/ui/label"
 + import { Minus, Plus, Info } from "lucide-react"
 + import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-+ 
++
 + interface QuantityControlProps {
 +   quantity: number
 +   minQuantity: number
@@ -124,7 +125,7 @@ I see that we need to create the `QuantityControl` component as a separate reusa
 +   label?: string
 +   tooltipContent?: string
 + }
-+ 
++
 + export function QuantityControl({
 +   quantity,
 +   minQuantity,
@@ -175,7 +176,7 @@ I see that we need to create the `QuantityControl` component as a separate reusa
 +       </div>
 +     </div>
 +   )
-+ } 
++ }
 ```
 
 ---
@@ -188,7 +189,7 @@ Now let's also update the `InCartBundleEditor` component to use the new `Quantit
   import { formatCurrency } from "@/lib/utils"
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 + import { QuantityControl } from "./quantity-control"
-  
+
   interface InCartBundleEditorProps {
                   {/* Quantity controls */}
                   <div className="flex items-center gap-2 mt-1">
@@ -213,7 +214,7 @@ Now let's also update the `InCartBundleEditor` component to use the new `Quantit
 -                       <Plus className="h-2.5 w-2.5" />
 -                     </Button>
 -                   </div>
-- 
+-
 -                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
 -                     <Info className="h-3 w-3" />
 -                     <span>Min: {item.minQuantity}, Max: {item.maxQuantity}</span>
@@ -234,6 +235,7 @@ Now let's also update the `InCartBundleEditor` component to use the new `Quantit
 Great! Now we have a consistent quantity control component being used across the codebase. The changes I've made include:
 
 1. Created a reusable `QuantityControl` component with:
+
    - Consistent styling and sizing
    - Min/max quantity validation
    - Optional label and tooltip support
@@ -244,6 +246,7 @@ Great! Now we have a consistent quantity control component being used across the
 3. Updated the bundle editor to use the same `QuantityControl`
 
 The benefits of this standardization include:
+
 - Consistent user experience across the app
 - Reusable code that reduces duplication
 - Built-in validation for min/max quantities
@@ -257,7 +260,4 @@ Would you like me to standardize any other components or make additional improve
 
 ---
 
-
-
 ---
-

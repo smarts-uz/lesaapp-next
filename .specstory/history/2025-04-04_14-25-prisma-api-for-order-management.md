@@ -19,7 +19,7 @@ Let's start by creating the Prisma schema:
 ```diff
     @@index([tax_rate_state(length: 2)], map: "tax_rate_state")
   }
-+ 
++
 + model WcOrder {
 +   id                  Int                   @id @default(autoincrement())
 +   status             String
@@ -43,10 +43,10 @@ Let's start by creating the Prisma schema:
 +   meta              WcOrderMeta[]
 +   operationalData    WcOrderOperationalData?
 +   comments           OrderComment[]
-+ 
++
 +   @@map("wp_wc_orders")
 + }
-+ 
++
 + model WcOrderAddress {
 +   id         Int      @id @default(autoincrement())
 +   orderId    Int      @map("order_id")
@@ -63,10 +63,10 @@ Let's start by creating the Prisma schema:
 +   email      String?
 +   phone      String?
 +   order      WcOrder  @relation(fields: [orderId], references: [id])
-+ 
++
 +   @@map("wp_wc_order_addresses")
 + }
-+ 
++
 + model WcOrderItem {
 +   id            Int                   @id @default(autoincrement()) @map("order_item_id")
 +   orderId       Int                   @map("order_id")
@@ -74,30 +74,30 @@ Let's start by creating the Prisma schema:
 +   type          String                @map("order_item_type")
 +   order         WcOrder              @relation(fields: [orderId], references: [id])
 +   meta          WcOrderItemMeta[]
-+ 
++
 +   @@map("wp_woocommerce_order_items")
 + }
-+ 
++
 + model WcOrderItemMeta {
 +   id           Int         @id @default(autoincrement()) @map("meta_id")
 +   orderItemId  Int         @map("order_item_id")
 +   metaKey      String      @map("meta_key")
 +   metaValue    String      @map("meta_value") @db.Text
 +   orderItem    WcOrderItem @relation(fields: [orderItemId], references: [id])
-+ 
++
 +   @@map("wp_woocommerce_order_itemmeta")
 + }
-+ 
++
 + model WcOrderMeta {
 +   id        Int      @id @default(autoincrement())
 +   orderId   Int      @map("order_id")
 +   metaKey   String   @map("meta_key")
 +   metaValue String   @map("meta_value") @db.Text
 +   order     WcOrder  @relation(fields: [orderId], references: [id])
-+ 
++
 +   @@map("wp_wc_orders_meta")
 + }
-+ 
++
 + model WcOrderOperationalData {
 +   id                        Int       @id @default(autoincrement())
 +   orderId                  Int       @unique @map("order_id")
@@ -118,10 +118,10 @@ Let's start by creating the Prisma schema:
 +   discountTotalAmount    Decimal   @map("discount_total_amount")
 +   recordedSales          Boolean   @map("recorded_sales")
 +   order                   WcOrder   @relation(fields: [orderId], references: [id])
-+ 
++
 +   @@map("wp_wc_order_operational_data")
 + }
-+ 
++
 + model OrderComment {
 +   id                Int      @id @default(autoincrement()) @map("comment_ID")
 +   postId           Int      @map("comment_post_ID")
@@ -139,10 +139,10 @@ Let's start by creating the Prisma schema:
 +   parent           Int      @map("comment_parent")
 +   userId           Int      @map("user_id")
 +   order            WcOrder  @relation(fields: [postId], references: [id])
-+ 
++
 +   @@map("wp_comments")
 + }
-  
+
 ```
 
 ---
@@ -155,18 +155,18 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
   import { NextResponse } from "next/server";
   import { prisma } from "@/lib/prisma";
 + import { PrismaClient } from '@prisma/client'
-+ 
++
 + const prismaClient = new PrismaClient()
-  
+
   export async function GET() {
       );
     }
 + }
-+ 
++
 + export async function POST(request: Request) {
 +   try {
 +     const data = await request.json()
-+ 
++
 +     // Create the order with all related data in a single transaction
 +     const order = await prismaClient.$transaction(async (tx) => {
 +       // 1. Create the main order
@@ -188,7 +188,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +           ipAddress: data.ipAddress,
 +           userAgent: data.userAgent,
 +           customerNote: data.customerNote || '',
-+           
++
 +           // Create billing/shipping address
 +           addresses: {
 +             create: data.addresses.map((address: any) => ({
@@ -206,7 +206,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +               phone: address.phone,
 +             }))
 +           },
-+ 
++
 +           // Create order items with their meta
 +           items: {
 +             create: data.items.map((item: any) => ({
@@ -220,7 +220,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +               }
 +             }))
 +           },
-+ 
++
 +           // Create order meta
 +           meta: {
 +             create: data.meta.map((meta: any) => ({
@@ -228,7 +228,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +               metaValue: meta.value,
 +             }))
 +           },
-+ 
++
 +           // Create operational data
 +           operationalData: {
 +             create: {
@@ -250,7 +250,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +               recordedSales: data.operationalData.recordedSales,
 +             }
 +           },
-+ 
++
 +           // Create order comments/notes
 +           comments: {
 +             create: data.comments.map((comment: any) => ({
@@ -283,20 +283,20 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +           comments: true
 +         }
 +       })
-+ 
++
 +       return order
 +     })
-+ 
-+     return NextResponse.json({ 
-+       success: true, 
-+       data: order 
++
++     return NextResponse.json({
++       success: true,
++       data: order
 +     })
-+ 
++
 +   } catch (error) {
 +     console.error('Order creation error:', error)
 +     return NextResponse.json(
-+       { 
-+         success: false, 
++       {
++         success: false,
 +         error: 'Failed to create order',
 +         details: error instanceof Error ? error.message : 'Unknown error'
 +       },
@@ -304,7 +304,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +     )
 +   }
 + }
-+ 
++
 + // Example request body type (TypeScript interface)
 + interface OrderCreateInput {
 +   status: string
@@ -382,7 +382,7 @@ Now, let's create an API endpoint to handle order creation. I'll create a route 
 +     parent?: number
 +     userId?: number
 +   }>
-  } 
+  }
 ```
 
 ---
@@ -419,30 +419,37 @@ const orderData = {
   ipAddress: "45.150.24.108",
   userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
   customerNote: "",
-  
-  addresses: [{
-    type: "billing",
-    firstName: "Dilbek",
-    lastName: "Mukhtarovich",
-    phone: "770700279"
-  }],
-  
-  items: [{
-    name: "Lesa Komplekt",
-    type: "line_item",
-    meta: [
-      { key: "_product_id", value: "66" },
-      { key: "_variation_id", value: "0" },
-      { key: "_qty", value: "1" },
-      { key: "_line_total", value: "4500" }
-    ]
-  }],
-  
+
+  addresses: [
+    {
+      type: "billing",
+      firstName: "Dilbek",
+      lastName: "Mukhtarovich",
+      phone: "770700279",
+    },
+  ],
+
+  items: [
+    {
+      name: "Lesa Komplekt",
+      type: "line_item",
+      meta: [
+        { key: "_product_id", value: "66" },
+        { key: "_variation_id", value: "0" },
+        { key: "_qty", value: "1" },
+        { key: "_line_total", value: "4500" },
+      ],
+    },
+  ],
+
   meta: [
     { key: "is_vat_exempt", value: "no" },
-    { key: "_billing_address_index", value: "Dilbek Mukhtarovich         770700279" }
+    {
+      key: "_billing_address_index",
+      value: "Dilbek Mukhtarovich         770700279",
+    },
   ],
-  
+
   operationalData: {
     createdVia: "checkout",
     woocommerceVersion: "9.7.1",
@@ -457,31 +464,33 @@ const orderData = {
     shippingTotalAmount: 0,
     discountTaxAmount: 0,
     discountTotalAmount: 0,
-    recordedSales: true
+    recordedSales: true,
   },
-  
-  comments: [{
-    author: "WooCommerce",
-    authorEmail: "woocommerce@lesa.smarts.uz",
-    date: new Date().toISOString(),
-    dateGmt: new Date().toISOString(),
-    content: "Order status changed from Pending payment to Processing.",
-    approved: "1",
-    agent: "WooCommerce",
-    type: "order_note"
-  }]
-}
+
+  comments: [
+    {
+      author: "WooCommerce",
+      authorEmail: "woocommerce@lesa.smarts.uz",
+      date: new Date().toISOString(),
+      dateGmt: new Date().toISOString(),
+      content: "Order status changed from Pending payment to Processing.",
+      approved: "1",
+      agent: "WooCommerce",
+      type: "order_note",
+    },
+  ],
+};
 
 // Send the request
-const response = await fetch('/api/orders', {
-  method: 'POST',
+const response = await fetch("/api/orders", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json'
+    "Content-Type": "application/json",
   },
-  body: JSON.stringify(orderData)
-})
+  body: JSON.stringify(orderData),
+});
 
-const result = await response.json()
+const result = await response.json();
 ```
 
 Key features of this implementation:
@@ -509,9 +518,11 @@ Would you like me to explain any specific part in more detail or help you with t
 _**User**_
 
 For the code present, we get this error:
+
 ```
 Property 'wcOrder' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
 ```
+
 How can I resolve this? If you propose a fix, please make it concise.
 
 ---
@@ -548,11 +559,11 @@ npx prisma generate
   import { NextResponse } from "next/server";
   import { prisma } from "@/lib/prisma";
 - import { PrismaClient } from '@prisma/client'
-- 
+-
 - const prismaClient = new PrismaClient()
-  
+
   export async function GET() {
-  
+
       // Create the order with all related data in a single transaction
 -     const order = await prismaClient.$transaction(async (tx) => {
 +     const order = await prisma.$transaction(async (tx) => {
@@ -588,11 +599,13 @@ Let's fix this by first introspecting your existing database to get the correct 
 1. First, remove the current schema content from `prisma/schema.prisma`
 
 2. Then run:
+
 ```bash
 npx prisma db pull
 ```
 
 This will generate the correct schema based on your existing database structure. After that:
+
 ```bash
 npx prisma generate
 ```
@@ -639,17 +652,21 @@ This error occurs because Windows can't rename the Prisma files - likely because
 
 1. Close any running Node.js processes or terminals that might be using Prisma
 2. Delete the Prisma generated files:
+
 ```bash
 rm -rf node_modules/.prisma
 rm -rf node_modules/@prisma
 ```
+
 3. Then reinstall and regenerate:
+
 ```bash
 npm install @prisma/client
 npx prisma generate
 ```
 
 If you still get permission errors, try:
+
 1. Close VS Code or your IDE completely
 2. Run the commands in a new terminal with administrator privileges
 3. If that doesn't work, you may need to restart your computer to release any locked files
@@ -671,6 +688,7 @@ I see the specific Windows EPERM error. This is a common Windows file locking is
 1. First, completely close VS Code/your IDE
 2. Open PowerShell as Administrator
 3. Navigate to your project directory and run:
+
 ```powershell
 Remove-Item -Path ".\node_modules" -Recurse -Force
 npm install
@@ -678,6 +696,7 @@ npx prisma generate
 ```
 
 This will:
+
 1. Force remove the node_modules directory that has the locked files
 2. Reinstall all dependencies cleanly
 3. Regenerate Prisma client without file lock conflicts
@@ -698,6 +717,7 @@ I see the exact error now. This is a Windows-specific issue with file locking du
 
 1. Stop any running dev servers (`npm run dev`, etc.)
 2. Open PowerShell as Administrator and run:
+
 ```powershell
 cd D:\ALL\Git\lesaapp-next
 taskkill /F /IM node.exe
@@ -706,6 +726,7 @@ npx prisma generate
 ```
 
 This sequence will:
+
 1. Force kill any Node processes that might be locking the files
 2. Remove the problematic .prisma folder
 3. Regenerate the Prisma client cleanly
@@ -714,7 +735,4 @@ Would you like to try these commands? Make sure to save any work and stop your d
 
 ---
 
-
-
 ---
-

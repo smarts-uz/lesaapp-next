@@ -13,6 +13,7 @@ _**Assistant**_
 I'll refactor the `BundleCustomizationDialog` component to improve its structure, readability, and maintainability. Let me analyze the code first to identify areas for improvement.
 
 Looking at the code, I can see several opportunities for refactoring:
+
 1. Extract subcomponents to reduce complexity
 2. Improve state management
 3. Enhance the compatibility warning logic
@@ -21,19 +22,18 @@ Looking at the code, I can see several opportunities for refactoring:
 
 Let me implement these improvements:
 
-
 ---
 
 ```diff
   "use client";
-  
+
 - import { useState, useEffect } from "react";
 + import { useState, useEffect, useCallback, useMemo } from "react";
   import { Button } from "@/components/ui/button";
   import {
     ) => void;
   }
-+ 
++
 + // Quantity control component for reusability
 + interface QuantityControlProps {
 +   quantity: number;
@@ -43,7 +43,7 @@ Let me implement these improvements:
 +   label?: string;
 +   tooltipContent?: string;
 + }
-+ 
++
 + function QuantityControl({
 +   quantity,
 +   minQuantity,
@@ -95,13 +95,13 @@ Let me implement these improvements:
 +     </div>
 +   );
 + }
-+ 
++
 + // Bundle item component
 + interface BundleItemProps {
 +   item: CustomizedBundleItem;
 +   onQuantityChange: (itemId: number, newQuantity: number) => void;
 + }
-+ 
++
 + function BundleItem({ item, onQuantityChange }: BundleItemProps) {
 +   return (
 +     <div className="space-y-3 pb-3 border-b last:border-0">
@@ -114,7 +114,7 @@ Let me implement these improvements:
 +             className="object-cover"
 +           />
 +         </div>
-+ 
++
 +         <div className="flex-1 min-w-0">
 +           <div className="flex items-center justify-between">
 +             <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ Let me implement these improvements:
 +             </div>
 +           </div>
 +           <p className="text-xs text-muted-foreground">Bundle component</p>
-+ 
++
 +           <div className="mt-2 space-y-2">
 +             <QuantityControl
 +               quantity={item.quantity}
@@ -141,15 +141,15 @@ Let me implement these improvements:
 +     </div>
 +   );
 + }
-+ 
++
 + // Compatibility warnings component
 + interface CompatibilityWarningsProps {
 +   warnings: string[];
 + }
-+ 
++
 + function CompatibilityWarnings({ warnings }: CompatibilityWarningsProps) {
 +   if (warnings.length === 0) return null;
-+   
++
 +   return (
 +     <Alert variant="warning" className="mb-4">
 +       <AlertCircle className="h-4 w-4" />
@@ -164,7 +164,7 @@ Let me implement these improvements:
 +     </Alert>
 +   );
 + }
-  
+
   export function BundleCustomizationDialog({
     onAddToCart,
   }: BundleCustomizationDialogProps) {
@@ -178,10 +178,10 @@ Let me implement these improvements:
 -     []
 -   );
 +   const [compatibilityWarnings, setCompatibilityWarnings] = useState<string[]>([]);
-+   
++
 +   // Calculate total price based on bundle quantity
 +   const totalPrice = useMemo(() => product.price * bundleQuantity, [product.price, bundleQuantity]);
-  
+
     // Reset state function
 -   const resetState = () => {
 +   const resetState = useCallback(() => {
@@ -190,9 +190,9 @@ Let me implement these improvements:
       setCompatibilityWarnings([]);
 -   };
 +   }, []);
-  
+
     // Initialize customized items when the dialog opens
-  
+
         setCustomizedItems(initialItems);
 -       calculateTotalPrice(initialItems);
       } else if (!open) {
@@ -201,48 +201,48 @@ Let me implement these improvements:
       }
 -   }, [open, product, allProducts]);
 +   }, [open, product, allProducts, resetState]);
-  
+
     // Check for compatibility warnings
     }, [customizedItems]);
-  
+
 -   const calculateTotalPrice = (items: CustomizedBundleItem[]) => {
 -     setTotalPrice(product.price * bundleQuantity);
 -   };
-- 
+-
 -   const handleBundleQuantityChange = (newQuantity: number) => {
 +   const handleBundleQuantityChange = useCallback((newQuantity: number) => {
       if (newQuantity < 1) newQuantity = 1;
       setBundleQuantity(newQuantity);
 -     setTotalPrice(product.price * newQuantity);
-      
+
       // Update bundled items quantities proportionally
-      
+
       setCustomizedItems(updatedItems);
 -   };
 +   }, [bundleQuantity, customizedItems]);
-  
+
 -   const handleQuantityChange = (itemId: number, newQuantity: number) => {
 +   const handleQuantityChange = useCallback((itemId: number, newQuantity: number) => {
       const item = customizedItems.find((i) => i.id === itemId);
       if (!item) return;
 -     if (newQuantity < item.minQuantity) newQuantity = item.minQuantity;
 -     if (newQuantity > item.maxQuantity) newQuantity = item.maxQuantity;
-+     
++
 +     // Ensure quantity is within min/max limits
 +     const validQuantity = Math.max(
 +       item.minQuantity,
 +       Math.min(newQuantity, item.maxQuantity)
 +     );
-+     
++
       const updatedItems = customizedItems.map((i) =>
 -       i.id === itemId ? { ...i, quantity: newQuantity } : i
 +       i.id === itemId ? { ...i, quantity: validQuantity } : i
       );
-+     
++
       setCustomizedItems(updatedItems);
 -   };
 +   }, [customizedItems]);
-  
+
 -   const handleAddToCart = () => {
 +   const handleAddToCart = useCallback(() => {
       // Filter out items with quantity 0
@@ -251,13 +251,13 @@ Let me implement these improvements:
       onOpenChange(false);
 -   };
 +   }, [customizedItems, onAddToCart, onOpenChange, product, resetState, totalPrice]);
-+ 
++
 +   // Filter visible items (non-optional or with quantity > 0)
-+   const visibleItems = useMemo(() => 
++   const visibleItems = useMemo(() =>
 +     customizedItems.filter((item) => !item.optional || item.quantity > 0),
 +     [customizedItems]
 +   );
-  
+
     return (
               </TooltipProvider>
             </div>
@@ -288,7 +288,7 @@ Let me implement these improvements:
 +             onQuantityChange={handleBundleQuantityChange}
 +           />
           </div>
-  
+
 -         {compatibilityWarnings.length > 0 && (
 -           <Alert variant="warning" className="mb-4">
 -             <AlertCircle className="h-4 w-4" />
@@ -303,7 +303,7 @@ Let me implement these improvements:
 -           </Alert>
 -         )}
 +         <CompatibilityWarnings warnings={compatibilityWarnings} />
-  
+
           <div className="flex-1 overflow-hidden">
               <ScrollArea className="flex-1 border rounded-md p-2">
                 <div className="space-y-4 pr-4">
@@ -332,7 +332,7 @@ Let me implement these improvements:
 -                               className="object-cover"
 -                             />
 -                           </div>
-- 
+-
 -                           <div className="flex-1 min-w-0">
 -                             <div className="flex items-center justify-between">
 -                               <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ Let me implement these improvements:
 -                             <p className="text-xs text-muted-foreground">
 -                               Bundle component
 -                             </p>
-- 
+-
 -                             <div className="mt-2 space-y-2">
 -                               <div className="flex items-center justify-between">
 -                                 <div className="flex items-center gap-1">
@@ -366,7 +366,7 @@ Let me implement these improvements:
 -                                     </Tooltip>
 -                                   </TooltipProvider>
 -                                 </div>
-- 
+-
 -                                 <div className="flex items-center border rounded-md">
 -                                   <Button
 -                                     variant="ghost"
@@ -457,7 +457,4 @@ These changes make the component more maintainable, easier to understand, and mo
 
 ---
 
-
-
 ---
-

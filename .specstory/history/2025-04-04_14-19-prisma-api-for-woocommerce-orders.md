@@ -20,7 +20,7 @@ model Order {
   currency         String   // UZS
   type             String   // shop_order
   taxAmount        Float    @map("tax_amount")
-  totalAmount      Float    @map("total_amount") 
+  totalAmount      Float    @map("total_amount")
   customerId       Int?     @map("customer_id")
   billingEmail     String?  @map("billing_email")
   dateCreated      DateTime @map("date_created_gmt")
@@ -69,7 +69,7 @@ model OrderItem {
   orderId       Int      @map("order_id")
   name          String   @map("order_item_name")
   type          String   @map("order_item_type")
-  
+
   order         Order    @relation(fields: [orderId], references: [id])
   meta          OrderItemMeta[]
 
@@ -248,12 +248,12 @@ const orderData = {
   paymentMethodTitle: "Cash on delivery",
   ipAddress: "45.150.24.108",
   userAgent: "Mozilla/5.0...",
-  
+
   address: {
     addressType: "billing",
     firstName: "Dilbek",
     lastName: "Mukhtarovich",
-    phone: "770700279"
+    phone: "770700279",
   },
 
   items: [
@@ -263,15 +263,13 @@ const orderData = {
       meta: [
         { metaKey: "_product_id", metaValue: "66" },
         { metaKey: "_qty", metaValue: "1" },
-        { metaKey: "_line_total", metaValue: "4500" }
-      ]
-    }
+        { metaKey: "_line_total", metaValue: "4500" },
+      ],
+    },
     // ... boshqa itemlar
   ],
 
-  meta: [
-    { metaKey: "is_vat_exempt", metaValue: "no" }
-  ],
+  meta: [{ metaKey: "is_vat_exempt", metaValue: "no" }],
 
   operationalData: {
     createdVia: "checkout",
@@ -287,7 +285,7 @@ const orderData = {
     shippingTotalAmount: 0,
     discountTaxAmount: 0,
     discountTotalAmount: 0,
-    recordedSales: true
+    recordedSales: true,
   },
 
   comments: [
@@ -302,19 +300,19 @@ const orderData = {
       agent: "WooCommerce",
       type: "order_note",
       parent: 0,
-      userId: 0
-    }
-  ]
-}
+      userId: 0,
+    },
+  ],
+};
 
 // API chaqiruvi
-const response = await fetch('/api/orders/create', {
-  method: 'POST',
+const response = await fetch("/api/orders/create", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  body: JSON.stringify(orderData)
-})
+  body: JSON.stringify(orderData),
+});
 ```
 
 Bu kod:
@@ -324,7 +322,8 @@ Bu kod:
 3. Xatolarni to'g'ri boshqaradi
 4. TypeScript orqali type xavfsizligini ta'minlaydi
 
-Eslatma: 
+Eslatma:
+
 - Migration yaratishdan oldin schema.prisma faylini tekshiring
 - Mavjud ma'lumotlarni ko'chirishda ehtiyot bo'ling
 - Production muhitida xavfsizlik choralarini qo'shing (auth, validation)
@@ -349,7 +348,7 @@ model Order {
   currency         String   // UZS
   type             String   // shop_order
   taxAmount        Float    @map("tax_amount")
-  totalAmount      Float    @map("total_amount") 
+  totalAmount      Float    @map("total_amount")
   customerId       Int?     @map("customer_id")
   billingEmail     String?  @map("billing_email")
   dateCreated      DateTime @map("date_created_gmt")
@@ -398,7 +397,7 @@ model OrderItem {
   orderId       Int      @map("order_id")
   name          String   @map("order_item_name")
   type          String   @map("order_item_type")
-  
+
   order         Order    @relation(fields: [orderId], references: [id])
   meta          OrderItemMeta[]
 
@@ -494,3 +493,4 @@ export interface OrderData {
 
 ---
 
+```

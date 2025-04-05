@@ -4,14 +4,13 @@
 
 _**User**_
 
-Get rid of subtotal as it's simply unnecessary 
+Get rid of subtotal as it's simply unnecessary
 
 ---
 
 _**Assistant**_
 
 I'll edit the cart summary to remove the subtotal section since it's redundant with the total.
-
 
 ---
 
@@ -35,14 +34,13 @@ I've removed the subtotal section and the separator, keeping only the total amou
 
 _**User**_
 
-@app  hide the dashboard tab 
+@app hide the dashboard tab
 
 ---
 
 _**Assistant**_
 
 Let me search for the navigation component to hide the dashboard tab.
-
 
 ---
 
@@ -83,11 +81,10 @@ Let me search for the navigation component to hide the dashboard tab.
 
 I found the navigation component in `components/dashboard/sidebar.tsx`. I'll modify it to remove the dashboard tab.
 
-
 ---
 
 ```diff
-  
+
   const routes = [
 -   {
 -     label: "Dashboard",
@@ -107,14 +104,13 @@ I've removed the dashboard route from the sidebar navigation. The dashboard tab 
 
 _**User**_
 
-@app  delete discounts tab completely
+@app delete discounts tab completely
 
 ---
 
 _**Assistant**_
 
 I'll remove the discounts tab from the sidebar navigation.
-
 
 ---
 
@@ -146,7 +142,6 @@ _**User**_
 _**Assistant**_
 
 I'll search for and remove all discount-related code.
-
 
 ---
 
@@ -189,18 +184,12 @@ I'll remove all discount-related code. Let me start with the files:
 
 1. First, let's delete the discounts page and its components:
 
-
 ---
 
 Cancelled
 
 ---
 
-
-
 ---
 
-
-
 ---
-

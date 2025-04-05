@@ -4,7 +4,7 @@
 
 _**User**_
 
-@example.sql  Create a post route that creates an customer I have included an example query to use @schema.prisma 
+@example.sql Create a post route that creates an customer I have included an example query to use @schema.prisma
 
 ---
 
@@ -195,11 +195,11 @@ Based on all the gathered information, I can now implement the POST route handle
 ---
 
 ```diff
-- 
+-
 + import { NextResponse } from 'next/server'
 + import { prisma } from '@/lib/prisma'
 + import { hash } from 'bcrypt'
-+ 
++
 + export interface CustomerData {
 +   username: string
 +   password: string
@@ -232,14 +232,14 @@ Based on all the gathered information, I can now implement the POST route handle
 +     country?: string
 +   }
 + }
-+ 
++
 + /**
 +  * Creates a new customer in WooCommerce/WordPress
 +  */
 + export async function POST(request: Request) {
 +   try {
 +     const data: CustomerData = await request.json()
-+     
++
 +     // Input validation
 +     if (!data.username || !data.password || !data.email || !data.firstName || !data.lastName) {
 +       return NextResponse.json(
@@ -247,7 +247,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +         { status: 400 }
 +       )
 +     }
-+ 
++
 +     // Check if the user already exists
 +     const existingUser = await prisma.wp_users.findFirst({
 +       where: {
@@ -257,17 +257,17 @@ Based on all the gathered information, I can now implement the POST route handle
 +         ]
 +       }
 +     })
-+ 
++
 +     if (existingUser) {
 +       return NextResponse.json(
 +         { error: 'User with this username or email already exists' },
 +         { status: 409 }
 +       )
 +     }
-+ 
++
 +     // Hash the password (bcrypt)
 +     const hashedPassword = await hash(data.password, 10)
-+     
++
 +     // Create the new user with all related metadata in a transaction
 +     const result = await prisma.$transaction(async (tx) => {
 +       // 1. Create the user in wp_users
@@ -284,9 +284,9 @@ Based on all the gathered information, I can now implement the POST route handle
 +           display_name: `${data.firstName} ${data.lastName}`
 +         }
 +       })
-+ 
++
 +       const userId = user.ID
-+ 
++
 +       // 2. Add user metadata
 +       const userMetaData = [
 +         { user_id: userId, meta_key: 'nickname', meta_value: data.nickname || data.username },
@@ -305,7 +305,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +         { user_id: userId, meta_key: 'dismissed_wp_pointers', meta_value: '' },
 +         { user_id: userId, meta_key: 'last_update', meta_value: Math.floor(Date.now() / 1000).toString() }
 +       ]
-+ 
++
 +       // Add billing information if provided
 +       if (data.billing) {
 +         userMetaData.push(
@@ -322,7 +322,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +           { user_id: userId, meta_key: 'billing_email', meta_value: data.email }
 +         )
 +       }
-+ 
++
 +       // Add shipping information if provided
 +       if (data.shipping) {
 +         userMetaData.push(
@@ -337,12 +337,12 @@ Based on all the gathered information, I can now implement the POST route handle
 +           { user_id: userId, meta_key: 'shipping_country', meta_value: data.shipping.country || '' }
 +         )
 +       }
-+ 
++
 +       // Add all metadata in a single batch
 +       await tx.wp_usermeta.createMany({
 +         data: userMetaData
 +       })
-+ 
++
 +       // 3. Add customer to WooCommerce customer lookup table
 +       await tx.wp_wc_customer_lookup.create({
 +         data: {
@@ -359,7 +359,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +           state: data.billing?.state || ''
 +         }
 +       })
-+ 
++
 +       // 4. Initialize empty shopping cart
 +       await tx.wp_usermeta.create({
 +         data: {
@@ -368,14 +368,14 @@ Based on all the gathered information, I can now implement the POST route handle
 +           meta_value: 'a:1:{s:4:"cart";a:0:{}}'
 +         }
 +       })
-+ 
++
 +       // 5. Update user count in wp_options
 +       const userCount = await tx.wp_users.count()
 +       await tx.wp_options.update({
 +         where: { option_name: 'user_count' },
 +         data: { option_value: userCount.toString() }
 +       })
-+ 
++
 +       return {
 +         id: userId.toString(),
 +         username: data.username,
@@ -385,7 +385,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +         displayName: `${data.firstName} ${data.lastName}`
 +       }
 +     })
-+ 
++
 +     return NextResponse.json({
 +       success: true,
 +       customer: result
@@ -393,8 +393,8 @@ Based on all the gathered information, I can now implement the POST route handle
 +   } catch (error) {
 +     console.error('Failed to create customer:', error)
 +     return NextResponse.json(
-+       { 
-+         success: false, 
++       {
++         success: false,
 +         error: 'Failed to create customer',
 +         details: error instanceof Error ? error.message : 'Unknown error'
 +       },
@@ -402,7 +402,7 @@ Based on all the gathered information, I can now implement the POST route handle
 +     )
 +   }
 + }
-  
+
 ```
 
 ---
@@ -495,22 +495,22 @@ Great! Now I'll create a README.md file documenting how to use the customer API 
 
 ---
 
-```diff
-- 
+````diff
+-
 + # Customer API
-+ 
++
 + This API provides functionality to manage customers in the WooCommerce/WordPress database.
-+ 
++
 + ## Endpoints
-+ 
++
 + ### Create Customer
-+ 
++
 + `POST /api/customer`
-+ 
++
 + Creates a new customer in the WooCommerce/WordPress database.
-+ 
++
 + #### Request Body (JSON)
-+ 
++
 + ```json
 + {
 +   "username": "customer_username",
@@ -545,16 +545,16 @@ Great! Now I'll create a README.md file documenting how to use the customer API 
 +   }
 + }
 + ```
-+ 
++
 + Required fields:
 + - `username`
 + - `password`
 + - `email`
 + - `firstName`
 + - `lastName`
-+ 
++
 + #### Response (Success)
-+ 
++
 + ```json
 + {
 +   "success": true,
@@ -568,26 +568,26 @@ Great! Now I'll create a README.md file documenting how to use the customer API 
 +   }
 + }
 + ```
-+ 
++
 + #### Response (Error - Missing Fields)
-+ 
++
 + ```json
 + {
 +   "error": "Required fields missing",
 +   "requiredFields": ["username", "password", "email", "firstName", "lastName"]
 + }
 + ```
-+ 
++
 + #### Response (Error - User Exists)
-+ 
++
 + ```json
 + {
 +   "error": "User with this username or email already exists"
 + }
 + ```
-+ 
++
 + #### Response (Error - Server Error)
-+ 
++
 + ```json
 + {
 +   "success": false,
@@ -595,11 +595,11 @@ Great! Now I'll create a README.md file documenting how to use the customer API 
 +   "details": "Error message details"
 + }
 + ```
-+ 
++
 + ## Implementation Details
-+ 
++
 + The implementation follows WordPress and WooCommerce customer creation flow:
-+ 
++
 + 1. Creates a new user in `wp_users` table
 + 2. Adds user metadata in `wp_usermeta` table:
 +    - Basic user information
@@ -610,9 +610,9 @@ Great! Now I'll create a README.md file documenting how to use the customer API 
 + 3. Adds the customer to the WooCommerce customer lookup table
 + 4. Initializes an empty shopping cart
 + 5. Updates the user count in WordPress options
-+ 
-+ The entire operation is performed in a database transaction to ensure data consistency. 
-```
++
++ The entire operation is performed in a database transaction to ensure data consistency.
+````
 
 ---
 
@@ -623,7 +623,7 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 ```diff
     }
   }
-+ 
++
 + /**
 +  * Gets all customers or a specific customer by ID
 +  */
@@ -631,28 +631,28 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +   try {
 +     const { searchParams } = new URL(request.url)
 +     const id = searchParams.get('id')
-+     
++
 +     // If ID is provided, get a specific customer
 +     if (id) {
 +       const userId = BigInt(id)
-+       
++
 +       // Get user from wp_users
 +       const user = await prisma.wp_users.findUnique({
 +         where: { ID: userId }
 +       })
-+       
++
 +       if (!user) {
 +         return NextResponse.json(
 +           { error: 'Customer not found' },
 +           { status: 404 }
 +         )
 +       }
-+       
++
 +       // Get customer metadata from wp_usermeta
 +       const userMeta = await prisma.wp_usermeta.findMany({
 +         where: { user_id: userId }
 +       })
-+       
++
 +       // Convert metadata array to object for easier access
 +       const metaObj: Record<string, string> = {}
 +       userMeta.forEach(meta => {
@@ -660,12 +660,12 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +           metaObj[meta.meta_key] = meta.meta_value
 +         }
 +       })
-+       
++
 +       // Get WooCommerce customer data
 +       const wooCustomer = await prisma.wp_wc_customer_lookup.findFirst({
 +         where: { user_id: userId }
 +       })
-+       
++
 +       const customer = {
 +         id: user.ID.toString(),
 +         username: user.user_login,
@@ -700,15 +700,15 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +           country: metaObj['shipping_country'] || ''
 +         }
 +       }
-+       
++
 +       return NextResponse.json(customer)
-+     } 
++     }
 +     // Otherwise, get all customers with pagination
 +     else {
 +       const page = parseInt(searchParams.get('page') || '1')
 +       const limit = parseInt(searchParams.get('limit') || '20')
 +       const offset = (page - 1) * limit
-+       
++
 +       // Fetch customers with a JOIN to get first and last name from the customer lookup table
 +       const customers = await prisma.$queryRaw<
 +         Array<{
@@ -722,36 +722,36 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +           date_last_active: Date | null;
 +         }>
 +       >`
-+         SELECT u.ID, u.user_login, u.user_email, u.display_name, 
-+                cl.first_name, cl.last_name, 
++         SELECT u.ID, u.user_login, u.user_email, u.display_name,
++                cl.first_name, cl.last_name,
 +                u.user_registered as date_registered,
 +                cl.date_last_active
 +         FROM wp_users u
 +         LEFT JOIN wp_wc_customer_lookup cl ON u.ID = cl.user_id
 +         WHERE EXISTS (
-+           SELECT 1 FROM wp_usermeta um 
-+           WHERE um.user_id = u.ID 
-+           AND um.meta_key = 'wp_capabilities' 
++           SELECT 1 FROM wp_usermeta um
++           WHERE um.user_id = u.ID
++           AND um.meta_key = 'wp_capabilities'
 +           AND um.meta_value LIKE '%customer%'
 +         )
 +         ORDER BY u.user_registered DESC
 +         LIMIT ${limit} OFFSET ${offset}
 +       `
-+       
++
 +       // Count total customers for pagination
 +       const countResult = await prisma.$queryRaw<[{ total: bigint }]>`
 +         SELECT COUNT(*) as total
 +         FROM wp_users u
 +         WHERE EXISTS (
-+           SELECT 1 FROM wp_usermeta um 
-+           WHERE um.user_id = u.ID 
-+           AND um.meta_key = 'wp_capabilities' 
++           SELECT 1 FROM wp_usermeta um
++           WHERE um.user_id = u.ID
++           AND um.meta_key = 'wp_capabilities'
 +           AND um.meta_value LIKE '%customer%'
 +         )
 +       `
-+       
++
 +       const total = Number(countResult[0].total)
-+       
++
 +       // Format customer data
 +       const formattedCustomers = customers.map(customer => ({
 +         id: customer.ID.toString(),
@@ -762,7 +762,7 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +         lastName: customer.last_name || '',
 +         dateRegistered: customer.date_registered
 +       }))
-+       
++
 +       return NextResponse.json({
 +         customers: formattedCustomers,
 +         pagination: {
@@ -776,8 +776,8 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +   } catch (error) {
 +     console.error('Failed to fetch customers:', error)
 +     return NextResponse.json(
-+       { 
-+         success: false, 
++       {
++         success: false,
 +         error: 'Failed to fetch customers',
 +         details: error instanceof Error ? error.message : 'Unknown error'
 +       },
@@ -785,7 +785,7 @@ Now that we've completed the implementation, let's also add a GET endpoint to re
 +     )
 +   }
 + }
-  
+
   /**
 ```
 
@@ -795,23 +795,23 @@ Let's update the README.md to include documentation for the GET endpoint:
 
 ---
 
-```diff
-  
+````diff
+
   ## Endpoints
-+ 
++
 + ### List Customers
-+ 
++
 + `GET /api/customer`
-+ 
++
 + Retrieves a paginated list of customers.
-+ 
++
 + #### Query Parameters
-+ 
++
 + - `page` (optional): Page number for pagination (default: 1)
 + - `limit` (optional): Number of customers per page (default: 20)
-+ 
++
 + #### Response
-+ 
++
 + ```json
 + {
 +   "customers": [
@@ -834,19 +834,19 @@ Let's update the README.md to include documentation for the GET endpoint:
 +   }
 + }
 + ```
-+ 
++
 + ### Get Customer by ID
-+ 
++
 + `GET /api/customer?id=123`
-+ 
++
 + Retrieves a specific customer by ID.
-+ 
++
 + #### Query Parameters
-+ 
++
 + - `id` (required): Customer ID
-+ 
++
 + #### Response (Success)
-+ 
++
 + ```json
 + {
 +   "id": "123",
@@ -883,23 +883,24 @@ Let's update the README.md to include documentation for the GET endpoint:
 +   }
 + }
 + ```
-+ 
++
 + #### Response (Error - Customer Not Found)
-+ 
++
 + ```json
 + {
 +   "error": "Customer not found"
 + }
 + ```
-  
+
   ### Create Customer
-```
+````
 
 ---
 
 Perfect! We've now created a fully functional customer API with endpoints for creating and retrieving customers. Let me summarize what we've accomplished:
 
 1. Created a POST endpoint for creating new WooCommerce customers:
+
    - The implementation follows the WooCommerce customer creation process
    - It creates entries in the appropriate WordPress and WooCommerce tables
    - It properly handles user metadata, including billing and shipping information
@@ -907,6 +908,7 @@ Perfect! We've now created a fully functional customer API with endpoints for cr
    - The operation is performed in a database transaction for data consistency
 
 2. Created a GET endpoint for retrieving customer information:
+
    - Supports retrieving a paginated list of all customers
    - Supports retrieving a specific customer by ID with detailed information
    - Properly joins data from related tables for complete customer information
@@ -960,3 +962,4 @@ model wp_users {
 
 ---
 
+```

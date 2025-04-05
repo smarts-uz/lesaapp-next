@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll modify the SQL query to fetch all products by removing the category filter. Let me edit the file.
 
-
 ---
 
 ```diff
@@ -22,7 +21,7 @@ I'll modify the SQL query to fetch all products by removing the category filter.
 -     JOIN wp_term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
 -     JOIN wp_terms t ON tt.term_id = t.term_id
       LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id AND pm.meta_key IN (
-        '_price', '_regular_price', '_sku', '_stock', '_stock_status', 
+        '_price', '_regular_price', '_sku', '_stock', '_stock_status',
         '_manage_stock', '_virtual', '_downloadable'
       )
 -     WHERE t.slug = 'pos'
@@ -47,7 +46,6 @@ deploy this app to netlify
 _**Assistant**_
 
 I'll help you deploy the app to Netlify. First, let's check if we have the necessary configuration files.
-
 
 ---
 
@@ -85,7 +83,6 @@ I'll help you deploy the app to Netlify. First, let's check if we have the neces
 
 Let me check the package.json to ensure we have the correct build scripts.
 
-
 ---
 
 Read file: package.json
@@ -100,20 +97,19 @@ To deploy to Netlify, you'll need to:
 
 Let me create the Netlify configuration file:
 
-
 ---
 
 ```diff
-- 
+-
 + [build]
 +   command = "npm run build"
 +   publish = ".next"
-+ 
++
 + [[plugins]]
 +   package = "@netlify/plugin-nextjs"
-+ 
++
 + [build.environment]
-+   NEXT_USE_NETLIFY_EDGE = "true" 
++   NEXT_USE_NETLIFY_EDGE = "true"
 ```
 
 ---
@@ -121,21 +117,25 @@ Let me create the Netlify configuration file:
 Now, follow these steps to deploy:
 
 1. Install the Netlify CLI:
+
 ```bash
 npm install -g netlify-cli
 ```
 
 2. Login to Netlify:
+
 ```bash
 netlify login
 ```
 
 3. Initialize your Netlify project:
+
 ```bash
 netlify init
 ```
 
 4. When prompted:
+
    - Choose "Create & configure a new site"
    - Select your team
    - Choose a site name
@@ -144,11 +144,13 @@ netlify init
 5. Make sure to set up your environment variables in Netlify's dashboard (Settings > Build & deploy > Environment variables) with the same variables from your `.env` file.
 
 6. Deploy your site:
+
 ```bash
 netlify deploy --prod
 ```
 
 Important notes:
+
 - Make sure your database connection string in Netlify's environment variables is accessible from Netlify's servers
 - If you're using a local database, you'll need to migrate to a cloud database service
 - The first deployment might take a few minutes as Netlify builds your application
@@ -194,7 +196,6 @@ _**Assistant**_
 
 I'll modify the `package.json` to include the Prisma commands in the build process for Netlify.
 
-
 ---
 
 ```diff
@@ -209,6 +210,7 @@ I'll modify the `package.json` to include the Prisma commands in the build proce
 ---
 
 Now when Netlify runs `npm run build`, it will:
+
 1. Generate Prisma Client
 2. Push database schema changes
 3. Build the Next.js application
@@ -217,7 +219,4 @@ This ensures your database is properly set up during the build process.
 
 ---
 
-
-
 ---
-

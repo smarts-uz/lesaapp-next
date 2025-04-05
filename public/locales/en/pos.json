@@ -45,4 +45,4 @@
   "warningScaffold": "Your cart has scaffold frames but no cross braces",
   "warningPlatforms": "Your cart has platforms but no scaffold frames",
   "warningGuardrails": "Your cart has guardrails but no platforms"
-} 
+}

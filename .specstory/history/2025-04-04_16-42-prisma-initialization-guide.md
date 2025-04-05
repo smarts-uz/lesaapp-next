@@ -19,11 +19,11 @@ First, I'll create the Prisma schema file and set up the basic configuration.
 ```diff
 + // This is your Prisma schema file,
 + // learn more about it in the docs: https://pris.ly/d/prisma-schema
-+ 
++
   generator client {
     provider = "prisma-client-js"
   }
-  
+
   datasource db {
 -   provider = "mysql"
 +   provider = "postgresql"
@@ -38,19 +38,19 @@ Now, I'll create the Prisma client instance file that we'll use throughout the a
 ---
 
 ```diff
-- 
+-
 + import { PrismaClient } from '@prisma/client'
-+ 
++
 + const globalForPrisma = globalThis as unknown as {
 +   prisma: PrismaClient | undefined
 + }
-+ 
++
 + export const prisma = globalForPrisma.prisma ?? new PrismaClient()
-+ 
++
 + if (process.env.NODE_ENV !== 'production') {
 +   globalForPrisma.prisma = prisma
 + }
-+ 
++
 ```
 
 ---
@@ -67,7 +67,4 @@ To
 
 ---
 
-
-
 ---
-

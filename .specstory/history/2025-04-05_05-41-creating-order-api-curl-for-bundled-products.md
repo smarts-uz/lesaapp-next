@@ -4,7 +4,7 @@
 
 _**User**_
 
-bundle product bilan order create qilish apisi uchun postman curl yarat datasi bilan 
+bundle product bilan order create qilish apisi uchun postman curl yarat datasi bilan
 
 ---
 
@@ -55,43 +55,43 @@ Postman uchun tushuntirib o'taman:
 
 1. **HTTP Method**: POST
 2. **URL**: `http://localhost:3000/api/order`
-3. **Headers**: 
+3. **Headers**:
    - Content-Type: application/json
 
 **Request body tuzilishi:**
 
 ```json
 {
-    "customer": {
-        "firstName": "John",
-        "lastName": "Doe",
-        "email": "john.doe@example.com",
-        "phone": "+998901234567",
-        "address": "123 Main Street",
-        "city": "Tashkent",
-        "country": "UZ"
+  "customer": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "phone": "+998901234567",
+    "address": "123 Main Street",
+    "city": "Tashkent",
+    "country": "UZ"
+  },
+  "products": [
+    {
+      "id": 123,
+      "name": "Product Bundle 1",
+      "price": 150000,
+      "quantity": 2,
+      "variationId": 0,
+      "updateStock": true
     },
-    "products": [
-        {
-            "id": 123,
-            "name": "Product Bundle 1",
-            "price": 150000,
-            "quantity": 2,
-            "variationId": 0,
-            "updateStock": true
-        },
-        {
-            "id": 124,
-            "name": "Product Bundle 2",
-            "price": 200000,
-            "quantity": 1,
-            "variationId": 0,
-            "updateStock": true
-        }
-    ],
-    "status": "wc-processing",
-    "paymentMethod": "cod",
-    "paymentMethodTitle": "Cash on delivery"
+    {
+      "id": 124,
+      "name": "Product Bundle 2",
+      "price": 200000,
+      "quantity": 1,
+      "variationId": 0,
+      "updateStock": true
+    }
+  ],
+  "status": "wc-processing",
+  "paymentMethod": "cod",
+  "paymentMethodTitle": "Cash on delivery"
 }
 ```
 
@@ -110,25 +110,24 @@ Postman uchun tushuntirib o'taman:
 5. `paymentMethodTitle` - to'lov usuli nomi (default: "Cash on delivery")
 
 **Kutilgan javob:**
+
 ```json
 {
-    "id": "1234567890",
-    "number": "#ORD-123",
-    "date": "2024-03-14T12:00:00.000Z",
-    "customer": "John Doe",
-    "status": "wc-processing",
-    "total": 500000
+  "id": "1234567890",
+  "number": "#ORD-123",
+  "date": "2024-03-14T12:00:00.000Z",
+  "customer": "John Doe",
+  "status": "wc-processing",
+  "total": 500000
 }
 ```
 
-Eslatma: 
+Eslatma:
+
 - `localhost:3000` ni o'zingizning server manzilingizga almashtiring
 - Mahsulot ID larini haqiqiy mahsulot ID lari bilan almashtiring
 - Narxlarni haqiqiy narxlar bilan almashtiring
 
 ---
 
-
-
 ---
-

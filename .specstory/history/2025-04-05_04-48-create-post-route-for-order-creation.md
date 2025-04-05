@@ -4,13 +4,11 @@
 
 _**User**_
 
-@example.sql  Create a post route that creates an order I have included an example query to use @schema.prisma 
+@example.sql Create a post route that creates an order I have included an example query to use @schema.prisma
 
 ---
 
 _**Assistant**_
-
-
 
 ---
 
@@ -21,24 +19,24 @@ _**Assistant**_
 -     if (!orderId) {
 -       return NextResponse.json({ error: "Order not found" }, { status: 404 });
 -     }
--     
--     
-- 
-+     const { 
-+       customer, 
-+       products, 
-+       status = "wc-processing", 
-+       paymentMethod = "cod", 
-+       paymentMethodTitle = "Cash on delivery" 
+-
+-
+-
++     const {
++       customer,
++       products,
++       status = "wc-processing",
++       paymentMethod = "cod",
++       paymentMethodTitle = "Cash on delivery"
 +     } = body;
-+     
++
 +     if (!products || !Array.isArray(products) || products.length === 0) {
 +       return NextResponse.json({ error: "Products are required" }, { status: 400 });
 +     }
-+ 
++
 +     // Calculate total amount from products
 +     const totalAmount = products.reduce((total, product) => total + (product.price * product.quantity), 0);
-+ 
++
 +     // Create order using Prisma transaction
 +     const result = await prisma.$transaction(async (tx) => {
 +       // 1. Create the main order record
@@ -62,7 +60,7 @@ _**Assistant**_
 +           customer_note: ""
 +         }
 +       });
-+ 
++
 +       // 2. Create billing address if customer info is provided
 +       if (customer) {
 +         await tx.wp_wc_order_addresses.create({
@@ -79,7 +77,7 @@ _**Assistant**_
 +           }
 +         });
 +       }
-+ 
++
 +       // 3. Create operational data
 +       await tx.wp_wc_order_operational_data.create({
 +         data: {
@@ -100,7 +98,7 @@ _**Assistant**_
 +           recorded_sales: true
 +         }
 +       });
-+ 
++
 +       // 4. Create order items
 +       for (const product of products) {
 +         const orderItem = await tx.wp_woocommerce_order_items.create({
@@ -110,7 +108,7 @@ _**Assistant**_
 +             order_id: order.id
 +           }
 +         });
-+ 
++
 +         // 5. Create order item meta
 +         await tx.wp_woocommerce_order_itemmeta.createMany({
 +           data: [
@@ -161,7 +159,7 @@ _**Assistant**_
 +             }
 +           ]
 +         });
-+ 
++
 +         // 6. Update product stock if needed
 +         if (product.updateStock) {
 +           await tx.wp_wc_product_meta_lookup.update({
@@ -177,7 +175,7 @@ _**Assistant**_
 +           });
 +         }
 +       }
-+ 
++
 +       // 7. Add basic order meta
 +       await tx.wp_wc_orders_meta.createMany({
 +         data: [
@@ -193,7 +191,7 @@ _**Assistant**_
 +           }
 +         ]
 +       });
-+ 
++
 +       return {
 +         id: order.id.toString(),
 +         number: `#ORD-${order.id.toString().padStart(3, "0")}`,
@@ -203,7 +201,7 @@ _**Assistant**_
 +         total: Number(order.total_amount) || 0
 +       };
 +     });
-+ 
++
 +     return NextResponse.json(result);
     } catch (error) {
 +     console.error("Failed to create order:", error);
@@ -242,19 +240,11 @@ _**Assistant**_
 
 ---
 
-
+---
 
 ---
 
-
-
 ---
-
-
-
----
-
-
 
 ---
 
@@ -295,6 +285,7 @@ To create an order, send a POST request to `/api/order` with a JSON body contain
 ```
 
 The implementation:
+
 1. Validates input data
 2. Creates records in all necessary WooCommerce tables via Prisma
 3. Updates product stock if requested
@@ -306,13 +297,11 @@ All required tables (orders, addresses, operational data, order items, etc.) are
 
 _**User**_
 
-create a postman collection for api route @api 
+create a postman collection for api route @api
 
 ---
 
 _**Assistant**_
-
-
 
 ---
 
@@ -355,11 +344,102 @@ _**Assistant**_
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer\": {\n    \"id\": 1,\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"1234567890\",\n    \"address\": \"123 Main St\",\n    \"city\": \"Anytown\",\n    \"country\": \"US
+              "raw": "{\n  \"customer\": {\n    \"id\": 1,\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"1234567890\",\n    \"address\": \"123 Main St\",\n    \"city\": \"Anytown\",\n    \"country\": \"US\"\n  },\n  \"products\": [\n    {\n      \"id\": 123,\n      \"name\": \"Product Name\",\n      \"price\": 2500,\n      \"quantity\": 2,\n      \"variationId\": 0,\n      \"updateStock\": true\n    }\n  ],\n  \"status\": \"wc-processing\",\n  \"paymentMethod\": \"cod\",\n  \"paymentMethodTitle\": \"Cash on delivery\"\n}"
+            },
+            "description": "Creates a new order with products and customer information."
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/order?id={{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "order"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{order_id}}"
+                }
+              ]
+            },
+            "description": "Fetches a specific order by its ID."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refunds",
+      "item": [
+        {
+          "name": "Create Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/refund",
+              "host": ["{{base_url}}"],
+              "path": ["api", "refund"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"amount\": 1000,\n  \"reason\": \"Customer requested refund\",\n  \"items\": [\n    {\n      \"orderItemId\": 123,\n      \"quantity\": 1,\n      \"amount\": 1000,\n      \"restockItems\": true\n    }\n  ]\n}"
+            },
+            "description": "Creates a refund for a specific order."
+          }
+        },
+        {
+          "name": "Get Refunds by Order ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/refund?orderId={{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "refund"],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "{{order_id}}"
+                }
+              ]
+            },
+            "description": "Fetches all refunds for a specific order."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "123",
+      "type": "string"
+    }
+  ]
+}
+```
+
+To use this collection:
+
+1. Copy the JSON above
+2. In Postman, click "Import" and paste the JSON
+3. Create an environment with variables:
+   - `base_url`: Your API base URL (e.g., http://localhost:3000)
+   - `order_id`: ID of an order when testing specific order operations
+
+Note that I've made assumptions about the refund endpoints since their implementation wasn't provided. You may need to adjust those endpoints based on your actual implementation.
 
 ---
 
-
-
 ---
-

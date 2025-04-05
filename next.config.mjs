@@ -1,6 +1,6 @@
-let userConfig = undefined
+let userConfig = undefined;
 try {
-  userConfig = await import('./v0-user-next.config')
+  userConfig = await import("./v0-user-next.config");
 } catch (e) {
   // ignore error
 }
@@ -17,21 +17,24 @@ const nextConfig = {
     unoptimized: true,
   },
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'ru', 'uz'],
+    defaultLocale: "en",
+    locales: ["en", "ru", "uz"],
     localeDetection: true,
-  }
-}
+  },
+};
 
 // Merge user config with default config
 if (userConfig) {
   Object.entries(userConfig).forEach(([key, value]) => {
-    if (typeof nextConfig[key] === 'object' && !Array.isArray(nextConfig[key])) {
-      nextConfig[key] = { ...nextConfig[key], ...value }
+    if (
+      typeof nextConfig[key] === "object" &&
+      !Array.isArray(nextConfig[key])
+    ) {
+      nextConfig[key] = { ...nextConfig[key], ...value };
     } else {
-      nextConfig[key] = value
+      nextConfig[key] = value;
     }
-  })
+  });
 }
 
-export default nextConfig
+export default nextConfig;

@@ -1,27 +1,35 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { formatCurrency } from "@/lib/utils"
-import { Receipt } from "lucide-react"
-import type { Refund } from "@/types/pos"
-import { format } from "date-fns"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatCurrency } from "@/lib/utils";
+import { Receipt } from "lucide-react";
+import type { Refund } from "@/types/pos";
+import { format } from "date-fns";
 
 interface RefundHistoryCellProps {
-  refunds: Refund[]
+  refunds: Refund[];
 }
 
 export function RefundHistoryCell({ refunds }: RefundHistoryCellProps) {
   if (!refunds || refunds.length === 0) {
-    return null
+    return null;
   }
 
-  const totalRefunded = refunds.reduce((sum, refund) => sum + refund.amount, 0)
+  const totalRefunded = refunds.reduce((sum, refund) => sum + refund.amount, 0);
 
   return (
     <div className="flex items-center gap-1">
-      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+      <Badge
+        variant="outline"
+        className="bg-red-50 text-red-700 border-red-200"
+      >
         {formatCurrency(totalRefunded)} refunded
       </Badge>
 
@@ -41,18 +49,21 @@ export function RefundHistoryCell({ refunds }: RefundHistoryCellProps) {
                     <span>
                       {(() => {
                         try {
-                          const dateObj = new Date(refund.date)
+                          const dateObj = new Date(refund.date);
                           // Check if date is valid
                           if (isNaN(dateObj.getTime())) {
-                            return "Invalid date"
+                            return "Invalid date";
                           }
-                          return format(dateObj, "MMM d, yyyy")
+                          return format(dateObj, "MMM d, yyyy");
                         } catch (error) {
-                          return "Invalid date"
+                          return "Invalid date";
                         }
-                      })()} - #{refund.id}
+                      })()}{" "}
+                      - #{refund.id}
                     </span>
-                    <span className="font-medium">{formatCurrency(refund.amount)}</span>
+                    <span className="font-medium">
+                      {formatCurrency(refund.amount)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -61,6 +72,5 @@ export function RefundHistoryCell({ refunds }: RefundHistoryCellProps) {
         </Tooltip>
       </TooltipProvider>
     </div>
-  )
+  );
 }
-
