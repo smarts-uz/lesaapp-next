@@ -136,7 +136,6 @@ export async function POST(request: Request) {
             end_date: endDateTime,
             used_days: usedDays,
             rental_price: BigInt(Math.round(rentalPrice)),
-            discount_days: discountDays,
             date_updated_gmt: new Date(),
             customer_note: reason || null,
             ...(refundType === "full" ? { status: "wc-refunded" } : {})
@@ -212,7 +211,6 @@ export async function POST(request: Request) {
             end_date: endDateTime,
             used_days: usedDays,
             rental_price: BigInt(Math.round(rentalPrice)),
-            discount_days: discountDays
           },
         });
 
@@ -391,14 +389,13 @@ export async function POST(request: Request) {
               customer_id: originalOrder.customer_id || BigInt(0),
               date_created: now,
               product_qty: negativeQty,
-              product_net_revenue: new Decimal(negativeAmount),
-              product_gross_revenue: new Decimal(negativeAmount),
-              coupon_amount: new Decimal(0),
-              tax_amount: new Decimal(0),
-              shipping_amount: new Decimal(0),
-              shipping_tax_amount: new Decimal(0),
+              product_net_revenue: Number(negativeAmount),
+              product_gross_revenue: Number(negativeAmount),
+              coupon_amount: Number(0),
+              tax_amount: Number(0),
+              shipping_amount: Number(0),
+              shipping_tax_amount: Number(0),
               used_days: originalOrder.used_days,
-              discount_days: discountDays,
               rental_price: BigInt(Math.round(Math.abs(negativeAmount) * Math.max(0, (originalOrder.used_days || 0) - discountDays)))
             }
           });
@@ -516,14 +513,13 @@ export async function POST(request: Request) {
                   customer_id: originalOrder.customer_id || BigInt(0),
                   date_created: now,
                   product_qty: negativeBundledQty,
-                  product_net_revenue: new Decimal(0),
-                  product_gross_revenue: new Decimal(0),
-                  coupon_amount: new Decimal(0),
-                  tax_amount: new Decimal(0),
-                  shipping_amount: new Decimal(0),
-                  shipping_tax_amount: new Decimal(0),
+                  product_net_revenue: Number(0),
+                  product_gross_revenue: Number(0),
+                  coupon_amount: Number(0),
+                  tax_amount: Number(0),
+                  shipping_amount: Number(0),
+                  shipping_tax_amount: Number(0),
                   used_days: originalOrder.used_days,
-                  discount_days: discountDays,
                   rental_price: BigInt(0)
                 }
               });

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 interface Customer {
-  id?: string;
+  id?: number;
   firstName?: string;
   lastName?: string;
   phone?: string;
