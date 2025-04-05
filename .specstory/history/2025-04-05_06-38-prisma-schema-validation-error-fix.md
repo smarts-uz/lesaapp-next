@@ -62,7 +62,6 @@ I see we have new linter errors - it looks like `total_rating` is also not a val
 Great! I've removed both the `onsale_price` and `total_rating` fields from the `wp_wc_product_meta_lookup` upsert operations since they weren't part of the Prisma schema. The remaining fields should now match the schema correctly.
 
 The changes I made:
-
 1. Removed `onsale_price` field which was causing the initial error
 2. Removed `total_rating` field which was also not in the schema
 3. Kept all other valid fields that are part of the schema
@@ -71,8 +70,6 @@ The order creation endpoint should now work correctly without schema validation 
 
 ---
 
-<<<<<<< HEAD
-=======
 _**User**_
 
 For the code present, we get this error:
@@ -110,5 +107,5 @@ This should resolve the import error.
 
 
 
->>>>>>> d071619 (Fix PrismaClient import error: update import path from '@prisma/client' to '.prisma/client' and add 'type' keyword for type definition. This resolves the module export issue in the order creation logic.)
 ---
+
