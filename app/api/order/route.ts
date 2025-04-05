@@ -75,6 +75,25 @@ interface PrismaTransaction {
   };
 }
 
+// Add interface for POST request body
+interface OrderCreateBody {
+  customer?: {
+    id?: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  };
+  products: ProductItem[];
+  status?: string;
+  paymentMethod?: string;
+  paymentMethodTitle?: string;
+  start_date: string; // Add start_date field
+}
+
 export async function GET() {
   try {
     // Get orders with customer details
@@ -162,18 +181,26 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body: OrderCreateBody = await request.json();
     const {
       customer,
       products,
       status = "wc-processing",
       paymentMethod = "cod",
       paymentMethodTitle = "Cash on delivery",
+      start_date, // Destructure start_date from body
     } = body;
 
     if (!products || !Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
         { error: "Products are required" },
+        { status: 400 },
+      );
+    }
+
+    if (!start_date) {
+      return NextResponse.json(
+        { error: "start_date is required" },
         { status: 400 },
       );
     }
@@ -189,7 +216,7 @@ export async function POST(request: Request) {
       // 1. Create the main order record
       const order = await tx.wp_wc_orders.create({
         data: {
-          id: BigInt(Math.floor(Date.now() / 1000)), // Generate a timestamp-based ID
+          id: BigInt(Math.floor(Date.now() / 1000)),
           status,
           currency: "UZS",
           type: "shop_order",
@@ -199,6 +226,7 @@ export async function POST(request: Request) {
           billing_email: customer?.email || null,
           date_created_gmt: new Date(),
           date_updated_gmt: new Date(),
+          start_date: new Date(start_date), // Use client provided start_date
           parent_order_id: BigInt(0),
           payment_method: paymentMethod,
           payment_method_title: paymentMethodTitle,
