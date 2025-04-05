@@ -381,6 +381,25 @@ export async function POST(request: Request) {
             });
           }
 
+          // Add entry to wp_wc_order_product_lookup for the refund
+          await tx.wp_wc_order_product_lookup.create({
+            data: {
+              order_item_id: refundItem.order_item_id,
+              order_id: refundOrderId,
+              product_id: BigInt(item.productId),
+              variation_id: BigInt(0),
+              customer_id: originalOrder.customer_id || BigInt(0),
+              date_created: now,
+              product_qty: negativeQty,
+              product_net_revenue: new Decimal(negativeAmount),
+              product_gross_revenue: new Decimal(negativeAmount),
+              coupon_amount: new Decimal(0),
+              tax_amount: new Decimal(0),
+              shipping_amount: new Decimal(0),
+              shipping_tax_amount: new Decimal(0)
+            }
+          });
+
           // Mark original item as restocked
           await tx.wp_woocommerce_order_itemmeta.create({
             data: {
@@ -482,6 +501,25 @@ export async function POST(request: Request) {
                     meta_value: refundItem.order_item_id.toString(),
                   },
                 ],
+              });
+
+              // Add entry to wp_wc_order_product_lookup for bundled item
+              await tx.wp_wc_order_product_lookup.create({
+                data: {
+                  order_item_id: refundBundledItem.order_item_id,
+                  order_id: refundOrderId,
+                  product_id: BigInt(bundledItem.productId),
+                  variation_id: BigInt(0),
+                  customer_id: originalOrder.customer_id || BigInt(0),
+                  date_created: now,
+                  product_qty: negativeBundledQty,
+                  product_net_revenue: new Decimal(0),
+                  product_gross_revenue: new Decimal(0),
+                  coupon_amount: new Decimal(0),
+                  tax_amount: new Decimal(0),
+                  shipping_amount: new Decimal(0),
+                  shipping_tax_amount: new Decimal(0)
+                }
               });
 
               // Add to bundled items list
