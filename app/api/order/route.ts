@@ -73,6 +73,12 @@ interface PrismaTransaction {
   wp_wc_product_meta_lookup: {
     upsert: Function;
   };
+  wp_wc_order_product_lookup: {
+    create: Function;
+  };
+  wp_wc_order_stats: {
+    create: Function;
+  };
 }
 
 // Add interface for POST request body
@@ -275,6 +281,9 @@ export async function POST(request: Request) {
         },
       });
 
+      // Calculate total items for order stats
+      let totalItemsCount = 0;
+
       // 4. Create order items and handle bundles
       for (const product of products) {
         const orderItem = await tx.wp_woocommerce_order_items.create({
@@ -333,6 +342,27 @@ export async function POST(request: Request) {
             meta_value: 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}',
           },
         ];
+
+        // Add entry to wp_wc_order_product_lookup for main product
+        await tx.wp_wc_order_product_lookup.create({
+          data: {
+            order_item_id: orderItem.order_item_id,
+            order_id: order.id,
+            product_id: BigInt(product.product_id),
+            variation_id: BigInt(product.variationId || 0),
+            customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
+            date_created: new Date(),
+            product_qty: product.quantity,
+            product_net_revenue: product.price * product.quantity,
+            product_gross_revenue: product.price * product.quantity,
+            coupon_amount: 0,
+            tax_amount: 0,
+            shipping_amount: 0,
+            shipping_tax_amount: 0,
+          },
+        });
+
+        totalItemsCount += product.quantity;
 
         // If this is a bundle product, add bundle-specific meta
         if (product.isBundle && product.bundleItems) {
@@ -443,6 +473,27 @@ export async function POST(request: Request) {
               ],
             });
 
+            // Add entry to wp_wc_order_product_lookup for bundled item
+            await tx.wp_wc_order_product_lookup.create({
+              data: {
+                order_item_id: bundledOrderItem.order_item_id,
+                order_id: order.id,
+                product_id: BigInt(bundleItem.product_id),
+                variation_id: BigInt(0),
+                customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
+                date_created: new Date(),
+                product_qty: bundleItem.quantity,
+                product_net_revenue: 0, // Bundled items typically have 0 net revenue
+                product_gross_revenue: 0, // Bundled items typically have 0 gross revenue
+                coupon_amount: 0,
+                tax_amount: 0,
+                shipping_amount: 0, 
+                shipping_tax_amount: 0,
+              },
+            });
+
+            totalItemsCount += bundleItem.quantity;
+
             // Update stock for bundled item
             await tx.wp_wc_product_meta_lookup.upsert({
               where: {
@@ -499,6 +550,29 @@ export async function POST(request: Request) {
             },
           });
         }
+      }
+
+      // 5. Create order stats entry
+      try {
+        await tx.wp_wc_order_stats.create({
+          data: {
+            order_id: order.id,
+            parent_id: BigInt(0),
+            date_created: new Date(),
+            date_created_gmt: new Date(),
+            num_items_sold: totalItemsCount,
+            total_sales: totalAmount,
+            tax_total: 0,
+            shipping_total: 0,
+            net_total: totalAmount,
+            returning_customer: false,
+            status: status,
+            customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
+          },
+        });
+      } catch (error) {
+        console.warn("Failed to create order stats:", error);
+        // Continue processing as this is not critical
       }
 
       return {
