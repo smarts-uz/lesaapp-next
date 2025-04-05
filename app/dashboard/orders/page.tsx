@@ -44,7 +44,7 @@ function OrdersContent() {
     const fetchOrders = async () => {
       try {
         setIsLoadingOrders(true)
-        const response = await fetch('/api/order',{method: 'POST', body: JSON.stringify({orderId})})
+        const response = await fetch('/api/order')
         if (!response.ok) throw new Error('Failed to fetch orders')
         const data = await response.json()
         setOrders(data)
