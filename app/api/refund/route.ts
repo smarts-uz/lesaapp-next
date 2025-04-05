@@ -138,6 +138,7 @@ export async function POST(request: Request) {
             rental_price: BigInt(Math.round(rentalPrice)),
             discount_days: discountDays,
             date_updated_gmt: new Date(),
+            customer_note: reason || null,
             ...(refundType === "full" ? { status: "wc-refunded" } : {})
           }
         });
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
             transaction_id: null,
             ip_address: null,
             user_agent: null,
-            customer_note: null,
+            customer_note: reason || null,
             start_date: originalOrder.start_date,
             end_date: endDateTime,
             used_days: usedDays,
