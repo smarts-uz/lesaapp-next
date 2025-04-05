@@ -2146,6 +2146,1139 @@ Bu o'zgarishlar orqali refund sababini ham original buyurtmada, ham refund buyur
 
 ---
 
+_**User**_
+
+wp_wc_order_product_lookup ga @3.sql  dagi querydaqa ma'lumotni qo'shish kerak ungaham rental_price qo'shiladi faqat har bir product summasidan kelib chiqib 
+
+---
+
+_**Assistant**_
+
+Men `wp_wc_order_product_lookup` jadvaliga yozishni qo'shaman va har bir mahsulot uchun `rental_price` ni hisoblayman:
+
+---
+
+```diff
+            },
+          });
++ 
++         // Add entries to order product lookup table
++         for (const item of items) {
++           const itemRentalPrice = effectiveDays * item.amount;
++           
++           await tx.wp_wc_order_product_lookup.create({
++             data: {
++               order_item_id: BigInt(item.itemId),
++               order_id: refundOrderId,
++               product_id: BigInt(item.productId),
++               variation_id: BigInt(0),
++               customer_id: originalOrder.customer_id || BigInt(0),
++               date_created: now,
++               product_qty: -item.quantity,
++               product_net_revenue: -item.amount,
++               product_gross_revenue: -item.amount,
++               rental_price: BigInt(Math.round(itemRentalPrice)),
++               coupon_amount: new Decimal(0),
++               tax_amount: new Decimal(0),
++               shipping_amount: new Decimal(0),
++               shipping_tax_amount: new Decimal(0)
++             }
++           });
++ 
++           // Also create entries for bundled items with zero amounts
++           if (item.isBundle && item.bundledItems && item.bundledItems.length > 0) {
++             for (const bundledItem of item.bundledItems) {
++               await tx.wp_wc_order_product_lookup.create({
++                 data: {
++                   order_item_id: BigInt(bundledItem.itemId),
++                   order_id: refundOrderId,
++                   product_id: BigInt(bundledItem.productId),
++                   variation_id: BigInt(0),
++                   customer_id: originalOrder.customer_id || BigInt(0),
++                   date_created: now,
++                   product_qty: -bundledItem.quantity,
++                   product_net_revenue: new Decimal(0),
++                   product_gross_revenue: new Decimal(0),
++                   rental_price: BigInt(0),
++                   coupon_amount: new Decimal(0),
++                   tax_amount: new Decimal(0),
++                   shipping_amount: new Decimal(0),
++                   shipping_tax_amount: new Decimal(0)
++                 }
++               });
++             }
++           }
++         }
+  
+          // Store refund metadata
+```
+
+---
+
+Qo'shilgan o'zgarishlar:
+
+1. Har bir mahsulot uchun `wp_wc_order_product_lookup` jadvaliga yozuv qo'shildi
+2. Har bir mahsulot uchun `rental_price` hisoblanmoqda:
+   - `itemRentalPrice = effectiveDays * item.amount` formula orqali
+   - `effectiveDays` bu `usedDays - discountDays`
+   - Natija `BigInt` ga aylantiriladi va yaxlitlanadi
+
+3. Asosiy mahsulotlar uchun:
+   - `product_qty`: manfiy miqdor (-quantity)
+   - `product_net_revenue`: manfiy summa (-amount)
+   - `product_gross_revenue`: manfiy summa (-amount)
+   - `rental_price`: hisoblab topilgan ijara narxi
+
+4. Bundle ichidagi mahsulotlar uchun:
+   - `product_qty`: manfiy miqdor (-quantity)
+   - `product_net_revenue`: 0
+   - `product_gross_revenue`: 0
+   - `rental_price`: 0 (chunki bundle narxi asosiy mahsulotda hisoblanadi)
+
+5. Barcha yozuvlar uchun:
+   - `coupon_amount`: 0
+   - `tax_amount`: 0
+   - `shipping_amount`: 0
+   - `shipping_tax_amount`: 0
+
+Bu o'zgarishlar orqali har bir mahsulot uchun alohida ijara narxi hisoblanib, `wp_wc_order_product_lookup` jadvaliga saqlanadi.
+
+---
+
+_**User**_
+
+huddi shu wp_wc_order_product_lookup ni order kreate qilish vaqtidaahm yaratish kerak
+
+---
+
+_**Assistant**_
+
+Ha, albatta. Original buyurtma yaratilganda ham `wp_wc_order_product_lookup` jadvaliga yozuvlar qo'shishimiz kerak. Buning uchun `wp_wc_orders.create` dan keyin quyidagi kodni qo'shamiz:
+
+---
+
+```diff
+          });
+  
+-         // Add entries to order product lookup table
++         // Add entries to order product lookup table for original order
++         for (const item of items) {
++           const itemRentalPrice = effectiveDays * item.amount;
++           
++           await tx.wp_wc_order_product_lookup.create({
++             data: {
++               order_item_id: BigInt(item.itemId),
++               order_id: BigInt(orderId),
++               product_id: BigInt(item.productId),
++               variation_id: BigInt(0),
++               customer_id: originalOrder.customer_id || BigInt(0),
++               date_created: now,
++               product_qty: item.quantity,
++               product_net_revenue: item.amount,
++               product_gross_revenue: item.amount,
++               rental_price: BigInt(Math.round(itemRentalPrice)),
++               coupon_amount: new Decimal(0),
++               tax_amount: new Decimal(0),
++               shipping_amount: new Decimal(0),
++               shipping_tax_amount: new Decimal(0)
++             }
++           });
++ 
++           // Also create entries for bundled items with zero amounts
++           if (item.isBundle && item.bundledItems && item.bundledItems.length > 0) {
++             for (const bundledItem of item.bundledItems) {
++               await tx.wp_wc_order_product_lookup.create({
++                 data: {
++                   order_item_id: BigInt(bundledItem.itemId),
++                   order_id: BigInt(orderId),
++                   product_id: BigInt(bundledItem.productId),
++                   variation_id: BigInt(0),
++                   customer_id: originalOrder.customer_id || BigInt(0),
++                   date_created: now,
++                   product_qty: bundledItem.quantity,
++                   product_net_revenue: new Decimal(0),
++                   product_gross_revenue: new Decimal(0),
++                   rental_price: BigInt(0),
++                   coupon_amount: new Decimal(0),
++                   tax_amount: new Decimal(0),
++                   shipping_amount: new Decimal(0),
++                   shipping_tax_amount: new Decimal(0)
++                 }
++               });
++             }
++           }
++         }
++ 
++         // Add entries to order product lookup table for refund order
+          for (const item of items) {
+            const itemRentalPrice = effectiveDays * item.amount;
+```
+
+---
+
+Endi:
+
+1. Original buyurtma uchun:
+   - Har bir mahsulot uchun `wp_wc_order_product_lookup` jadvaliga yozuv qo'shiladi
+   - `product_qty`: musbat miqdor (quantity)
+   - `product_net_revenue`: musbat summa (amount)
+   - `product_gross_revenue`: musbat summa (amount)
+   - `rental_price`: hisoblab topilgan ijara narxi
+
+2. Bundle ichidagi mahsulotlar uchun:
+   - `product_qty`: musbat miqdor (quantity)
+   - `product_net_revenue`: 0
+   - `product_gross_revenue`: 0
+   - `rental_price`: 0
+
+3. Refund buyurtmasi uchun (avvalgi kod):
+   - Har bir mahsulot uchun manfiy miqdorlar
+   - Bundle ichidagi mahsulotlar uchun manfiy miqdorlar va nol summalar
+
+Bu o'zgarishlar orqali:
+1. Original buyurtma yaratilganda `wp_wc_order_product_lookup` jadvaliga musbat yozuvlar qo'shiladi
+2. Refund qilinganda esa manfiy yozuvlar qo'shiladi
+3. Har bir mahsulot uchun ijara narxi to'g'ri hisoblanadi va saqlanadi
+
+---
+
+_**User**_
+
+order kreate bu filega yoziladi 
+
+---
+
+_**Assistant**_
+
+Ha, albatta. `app/api/order/route.ts` faylida buyurtma yaratish jarayonida `wp_wc_order_product_lookup` jadvaliga yozuvlarni qo'shishimiz kerak. Men buni `products` loop ichida qo'shaman:
+
+---
+
+```diff
+  import { prisma } from "@/lib/prisma";
+  import { PrismaClient } from "@prisma/client";
++ import { Decimal } from "@prisma/client";
+  
+  // Custom BigInt serializer
+      upsert: Function;
+    };
++   wp_wc_order_product_lookup: {
++     create: Function;
++   };
+  }
+  
+            data: baseItemMeta,
+          });
++ 
++         // Add entry to order product lookup
++         await tx.wp_wc_order_product_lookup.create({
++           data: {
++             order_item_id: orderItem.order_item_id,
++             order_id: order.id,
++             product_id: BigInt(product.product_id),
++             variation_id: BigInt(product.variationId || 0),
++             customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
++             date_created: new Date(),
++             product_qty: product.quantity,
++             product_net_revenue: product.price * product.quantity,
++             product_gross_revenue: product.price * product.quantity,
++             rental_price: BigInt(0), // Will be updated when rental is completed
++             coupon_amount: new Decimal(0),
++             tax_amount: new Decimal(0),
++             shipping_amount: new Decimal(0),
++             shipping_tax_amount: new Decimal(0)
++           }
++         });
++ 
++         // If this is a bundle, create lookup entries for bundled items
++         if (product.isBundle && product.bundleItems) {
++           for (const bundleItem of product.bundleItems) {
++             await tx.wp_wc_order_product_lookup.create({
++               data: {
++                 order_item_id: BigInt(bundleItem.itemId),
++                 order_id: order.id,
++                 product_id: BigInt(bundleItem.product_id),
++                 variation_id: BigInt(0),
++                 customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
++                 date_created: new Date(),
++                 product_qty: bundleItem.quantity,
++                 product_net_revenue: new Decimal(0),
++                 product_gross_revenue: new Decimal(0),
++                 rental_price: BigInt(0), // Will be updated when rental is completed
++                 coupon_amount: new Decimal(0),
++                 tax_amount: new Decimal(0),
++                 shipping_amount: new Decimal(0),
++                 shipping_tax_amount: new Decimal(0)
++               }
++             });
++           }
++         }
+  
+          // Update product stock if not a bundle
+```
+
+---
+
+Linter xatolarini tuzatish uchun yana bir o'zgartirish kiritaman:
+
+---
+
+
+
+---
+
+Kechirasiz, yana bir marta urinib ko'raman:
+
+---
+
+```diff
+  import { NextResponse } from "next/server";
+  import { prisma } from "@/lib/prisma";
+- import { PrismaClient } from "@prisma/client";
+- import { Decimal } from "@prisma/client";
++ import { Decimal } from "@prisma/client/runtime/library";
+  
+  // Custom BigInt serializer
+```
+
+---
+
+Endi bundled itemlar uchun order_item_id ni to'g'ri olish kerak:
+
+---
+
+```diff
+          if (product.isBundle && product.bundleItems) {
+            for (const bundleItem of product.bundleItems) {
++             const bundledOrderItem = await tx.wp_woocommerce_order_items.create({
++               data: {
++                 order_item_name: `Product #${bundleItem.product_id}`,
++                 order_item_type: "line_item",
++                 order_id: order.id,
++               },
++             });
++ 
+              await tx.wp_wc_order_product_lookup.create({
+                data: {
+-                 order_item_id: BigInt(bundleItem.itemId),
++                 order_item_id: bundledOrderItem.order_item_id,
+                  order_id: order.id,
+                  product_id: BigInt(bundleItem.product_id),
+```
+
+---
+
+Endi buyurtma yaratish jarayonida:
+
+1. Har bir mahsulot uchun `wp_wc_order_product_lookup` jadvaliga yozuv qo'shiladi:
+   - `order_item_id`: mahsulot qatori ID si
+   - `product_qty`: mahsulot miqdori
+   - `product_net_revenue`: mahsulot narxi * miqdori
+   - `product_gross_revenue`: mahsulot narxi * miqdori
+   - `rental_price`: 0 (ijara tugagandan keyin yangilanadi)
+
+2. Bundle mahsulotlar uchun:
+   - Avval yangi order item yaratiladi
+   - So'ng `wp_wc_order_product_lookup` jadvaliga yozuv qo'shiladi:
+     - `order_item_id`: yangi yaratilgan order item ID si
+     - `product_qty`: bundle ichidagi mahsulot miqdori
+     - `product_net_revenue`: 0
+     - `product_gross_revenue`: 0
+     - `rental_price`: 0
+
+Bu o'zgarishlar orqali:
+1. Har bir mahsulot uchun lookup ma'lumotlari saqlanadi
+2. Bundle mahsulotlar to'g'ri qayd etiladi
+3. Ijara narxi keyinchalik yangilanishi uchun tayyorlanadi
+
+---
+
+_**User**_
+
+err
+
+---
+
+_**Assistant**_
+
+Xatolik `PRIMARY` key constraint bilan bog'liq ekan. `wp_wc_order_product_lookup` jadvalida `order_item_id` primary key bo'lishi kerak. Bundled itemlar uchun yangi order item yaratayotganimizda, bir xil `order_item_id` ishlatilayotgan ekan. Buni tuzatamiz:
+
+---
+
+```diff
+            // Create bundled items
+            for (const [index, bundleItem] of product.bundleItems.entries()) {
+-             const bundledOrderItem = await tx.wp_woocommerce_order_items.create(
+-               {
++             // Create bundled item order item
++             const bundledOrderItem = await tx.wp_woocommerce_order_items.create({
+                data: {
+                  order_item_name: `Product #${bundleItem.product_id}`,
+                  order_item_type: "line_item",
+                  order_id: order.id,
+                },
+-               },
+-             );
++             });
+  
+              // Add bundled item meta
+                ],
+              });
++ 
++             // Add lookup entry for bundled item using its own order_item_id
++             await tx.wp_wc_order_product_lookup.create({
++               data: {
++                 order_item_id: bundledOrderItem.order_item_id,
++                 order_id: order.id,
++                 product_id: BigInt(bundleItem.product_id),
++                 variation_id: BigInt(0),
++                 customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
++                 date_created: new Date(),
++                 product_qty: bundleItem.quantity,
++                 product_net_revenue: new Decimal(0),
++                 product_gross_revenue: new Decimal(0),
++                 rental_price: BigInt(0), // Will be updated when rental is completed
++                 coupon_amount: new Decimal(0),
++                 tax_amount: new Decimal(0),
++                 shipping_amount: new Decimal(0),
++                 shipping_tax_amount: new Decimal(0)
++               }
++             });
+  
+              // Update stock for bundled item
+          // If this is a bundle, create lookup entries for bundled items
+          if (product.isBundle && product.bundleItems) {
+-           for (const bundleItem of product.bundleItems) {
++           for (const [index, bundleItem] of product.bundleItems.entries()) {
++             // Create bundled item order item
+              const bundledOrderItem = await tx.wp_woocommerce_order_items.create({
+                data: {
+              });
+  
++             // Add bundled item meta
++             await tx.wp_woocommerce_order_itemmeta.createMany({
++               data: [
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_product_id",
++                   meta_value: bundleItem.product_id.toString(),
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_variation_id",
++                   meta_value: "0",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_qty",
++                   meta_value: bundleItem.quantity.toString(),
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_tax_class",
++                   meta_value: "",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_line_subtotal",
++                   meta_value: "0",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_line_subtotal_tax",
++                   meta_value: "0",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_line_total",
++                   meta_value: "0",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_line_tax",
++                   meta_value: "0",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_line_tax_data",
++                   meta_value: 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}',
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_bundled_by",
++                   meta_value: bundleCartKey,
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_bundled_item_id",
++                   meta_value: (index + 1).toString(),
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_bundled_item_priced_individually",
++                   meta_value: "no",
++                 },
++                 {
++                   order_item_id: bundledOrderItem.order_item_id,
++                   meta_key: "_bundled_item_needs_shipping",
++                   meta_value: "yes",
++                 },
++               ],
++             });
++ 
++             // Add lookup entry for bundled item using its own order_item_id
+              await tx.wp_wc_order_product_lookup.create({
+                data: {
+                }
+              });
++ 
++             // Update stock for bundled item
++             await tx.wp_wc_product_meta_lookup.upsert({
++               where: {
++                 product_id: BigInt(bundleItem.product_id),
++               },
++               create: {
++                 product_id: BigInt(bundleItem.product_id),
++                 stock_quantity: -bundleItem.quantity,
++                 total_sales: bundleItem.quantity,
++                 min_price: 0,
++                 max_price: 0,
++                 rating_count: 0,
++                 average_rating: 0,
++               },
++               update: {
++                 stock_quantity: {
++                   decrement: bundleItem.quantity,
++                 },
++                 total_sales: {
++                   increment: bundleItem.quantity,
++                 },
++               },
++             });
+            }
+          }
+```
+
+---
+
+Asosiy o'zgarishlar:
+
+1. Bundle ichidagi mahsulotlar uchun:
+   - Avval `bundledOrderItem` yaratiladi
+   - So'ng uning metadata ma'lumotlari qo'shiladi
+   - Keyin `wp_wc_order_product_lookup` jadvaliga yozuv qo'shiladi, bunda:
+     - `order_item_id`: yangi yaratilgan `bundledOrderItem.order_item_id` ishlatiladi
+     - Har bir bundle item uchun alohida yozuv yaratiladi
+
+2. Takrorlanayotgan kodlarni olib tashladik va kodlarni tartibli joylashtirdik
+
+3. `bundleCartKey` xatosini tuzatish kerak. Uni bundle meta qo'shishdan oldin yaratish kerak:
+
+---
+
+
+
+---
+
+Endi:
+1. Har bir mahsulot uchun `wp_wc_order_product_lookup` jadvaliga alohida yozuv qo'shiladi
+2. Bundle mahsulotlar uchun:
+   - Bundle parent mahsulot uchun yozuv qo'shiladi (narx va miqdor bilan)
+   - Bundle ichidagi har bir mahsulot uchun alohida yozuv qo'shiladi (narx 0 bilan)
+3. Har bir yozuv unique `order_item_id` ga ega bo'ladi
+4. `rental_price` dastlab 0 qiymatga ega bo'ladi va ijara tugagandan keyin yangilanadi
+
+Bu o'zgarishlar orqali PRIMARY KEY xatosi hal bo'lishi kerak.
+
+---
+
+_**User**_
+
+xatolik
+
+---
+
+_**Assistant**_
+
+Xatolik `wp_wc_order_product_lookup` jadvalida takrorlanayotgan `order_item_id` bilan bog'liq. Kodda bundle itemlar uchun bir xil operatsiyani ikki marta bajarayotgan ekanmiz. Buni tuzatamiz:
+
+---
+
+```diff
+          ];
+  
+-         // If this is a bundle product, add bundle-specific meta
++         // Create order item meta
++         await tx.wp_woocommerce_order_itemmeta.createMany({
++           data: baseItemMeta,
++         });
++ 
++         // Add entry to order product lookup
++         await tx.wp_wc_order_product_lookup.create({
++           data: {
++             order_item_id: orderItem.order_item_id,
++             order_id: order.id,
++             product_id: BigInt(product.product_id),
++             variation_id: BigInt(product.variationId || 0),
++             customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
++             date_created: new Date(),
++             product_qty: product.quantity,
++             product_net_revenue: product.price * product.quantity,
++             product_gross_revenue: product.price * product.quantity,
++             rental_price: BigInt(0), // Will be updated when rental is completed
++             coupon_amount: new Decimal(0),
++             tax_amount: new Decimal(0),
++             shipping_amount: new Decimal(0),
++             shipping_tax_amount: new Decimal(0)
++           }
++         });
++ 
++         // Update product stock if not a bundle
++         if (!product.isBundle) {
++           await tx.wp_wc_product_meta_lookup.upsert({
++             where: {
++               product_id: BigInt(product.product_id),
++             },
++             create: {
++               product_id: BigInt(product.product_id),
++               stock_quantity: -product.quantity,
++               total_sales: product.quantity,
++               min_price: product.price,
++               max_price: product.price,
++               rating_count: 0,
++               average_rating: 0,
++             },
++             update: {
++               stock_quantity: {
++                 decrement: product.quantity,
++               },
++               total_sales: {
++                 increment: product.quantity,
++               },
++             },
++           });
++         }
++ 
++         // If this is a bundle product, handle bundled items
+          if (product.isBundle && product.bundleItems) {
+            const bundleCartKey = Math.random().toString(36).substring(2, 15);
+  
+            // Add bundle meta
+-           baseItemMeta.push(
++           await tx.wp_woocommerce_order_itemmeta.createMany({
++             data: [
+                {
+                  order_item_id: orderItem.order_item_id,
+                  meta_value: bundleCartKey,
+                },
+-           );
++             ],
++           });
+  
+            // Create bundled items
+            }
+          }
+- 
+-         // Create order item meta
+-         await tx.wp_woocommerce_order_itemmeta.createMany({
+-           data: baseItemMeta,
+-         });
+- 
+-         // Add entry to order product lookup
+-         await tx.wp_wc_order_product_lookup.create({
+-           data: {
+-             order_item_id: orderItem.order_item_id,
+-             order_id: order.id,
+-             product_id: BigInt(product.product_id),
+-             variation_id: BigInt(product.variationId || 0),
+-             customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
+-             date_created: new Date(),
+-             product_qty: product.quantity,
+-             product_net_revenue: product.price * product.quantity,
+-             product_gross_revenue: product.price * product.quantity,
+-             rental_price: BigInt(0), // Will be updated when rental is completed
+-             coupon_amount: new Decimal(0),
+-             tax_amount: new Decimal(0),
+-             shipping_amount: new Decimal(0),
+-             shipping_tax_amount: new Decimal(0)
+-           }
+-         });
+- 
+-         // If this is a bundle, create lookup entries for bundled items
+-         if (product.isBundle && product.bundleItems) {
+-           for (const [index, bundleItem] of product.bundleItems.entries()) {
+-             // Create bundled item order item
+-             const bundledOrderItem = await tx.wp_woocommerce_order_items.create({
+-               data: {
+-                 order_item_name: `Product #${bundleItem.product_id}`,
+-                 order_item_type: "line_item",
+-                 order_id: order.id,
+-               },
+-             });
+- 
+-             // Add bundled item meta
+-             await tx.wp_woocommerce_order_itemmeta.createMany({
+-               data: [
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_product_id",
+-                   meta_value: bundleItem.product_id.toString(),
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_variation_id",
+-                   meta_value: "0",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_qty",
+-                   meta_value: bundleItem.quantity.toString(),
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_tax_class",
+-                   meta_value: "",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_line_subtotal",
+-                   meta_value: "0",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_line_subtotal_tax",
+-                   meta_value: "0",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_line_total",
+-                   meta_value: "0",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_line_tax",
+-                   meta_value: "0",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_line_tax_data",
+-                   meta_value: 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}',
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_bundled_by",
+-                   meta_value: bundleCartKey,
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_bundled_item_id",
+-                   meta_value: (index + 1).toString(),
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_bundled_item_priced_individually",
+-                   meta_value: "no",
+-                 },
+-                 {
+-                   order_item_id: bundledOrderItem.order_item_id,
+-                   meta_key: "_bundled_item_needs_shipping",
+-                   meta_value: "yes",
+-                 },
+-               ],
+-             });
+- 
+-             // Add lookup entry for bundled item using its own order_item_id
+-             await tx.wp_wc_order_product_lookup.create({
+-               data: {
+-                 order_item_id: bundledOrderItem.order_item_id,
+-                 order_id: order.id,
+-                 product_id: BigInt(bundleItem.product_id),
+-                 variation_id: BigInt(0),
+-                 customer_id: customer?.id ? BigInt(customer.id) : BigInt(0),
+-                 date_created: new Date(),
+-                 product_qty: bundleItem.quantity,
+-                 product_net_revenue: new Decimal(0),
+-                 product_gross_revenue: new Decimal(0),
+-                 rental_price: BigInt(0), // Will be updated when rental is completed
+-                 coupon_amount: new Decimal(0),
+-                 tax_amount: new Decimal(0),
+-                 shipping_amount: new Decimal(0),
+-                 shipping_tax_amount: new Decimal(0)
+-               }
+-             });
+- 
+-             // Update stock for bundled item
+-             await tx.wp_wc_product_meta_lookup.upsert({
+-               where: {
+-                 product_id: BigInt(bundleItem.product_id),
+-               },
+-               create: {
+-                 product_id: BigInt(bundleItem.product_id),
+-                 stock_quantity: -bundleItem.quantity,
+-                 total_sales: bundleItem.quantity,
+-                 min_price: 0,
+-                 max_price: 0,
+-                 rating_count: 0,
+-                 average_rating: 0,
+-               },
+-               update: {
+-                 stock_quantity: {
+-                   decrement: bundleItem.quantity,
+-                 },
+-                 total_sales: {
+-                   increment: bundleItem.quantity,
+-                 },
+-               },
+-             });
+-           }
+-         }
+- 
+-         // Update product stock if not a bundle
+-         if (!product.isBundle) {
+-           await tx.wp_wc_product_meta_lookup.upsert({
+-             where: {
+-               product_id: BigInt(product.product_id),
+-             },
+-             create: {
+-               product_id: BigInt(product.product_id),
+-               stock_quantity: -product.quantity,
+-               total_sales: product.quantity,
+-               min_price: product.price,
+-               max_price: product.price,
+-               rating_count: 0,
+-               average_rating: 0,
+-             },
+-             update: {
+-               stock_quantity: {
+-                 decrement: product.quantity,
+-               },
+-               total_sales: {
+-                 increment: product.quantity,
+-               },
+-             },
+-           });
+-         }
+        }
+  
+```
+
+---
+
+Men quyidagi o'zgarishlarni amalga oshirdim:
+
+1. Bundle itemlar uchun takrorlanayotgan kodni olib tashladim
+2. `bundleCartKey` o'zgaruvchisini bundle meta ma'lumotlarini qo'shishdan oldin e'lon qildim
+3. Kodni qayta strukturaladim:
+   - Avval asosiy order item meta va lookup entry yaratiladi
+   - Keyin bundle bo'lmagan mahsulotlar uchun stock update qilinadi
+   - So'ngra bundle mahsulotlar uchun qo'shimcha ma'lumotlar qo'shiladi
+
+Bu o'zgarishlar:
+- `wp_wc_order_product_lookup` jadvalidagi PRIMARY KEY xatoligini bartaraf etadi
+- Bundle itemlar uchun barcha kerakli ma'lumotlarni saqlaydi
+- Kodning tuzilishini aniqroq va tushunarli qiladi
+
+Endi refund jarayonida `order_item_id` takrorlanmaydi va xatolik bartaraf etilishi kerak.
+
+---
+
+_**User**_
+
+xato
+
+---
+
+_**Assistant**_
+
+`wp_wc_order_product_lookup` jadvalidagi PRIMARY KEY xatoligini tuzatish uchun quyidagi o'zgarishlarni amalga oshiramiz:
+
+---
+
+```diff
+            const itemRentalPrice = effectiveDays * item.amount;
+            
++           // Create refund line item first
++           const refundLineItem = await tx.wp_woocommerce_order_items.create({
++             data: {
++               order_item_name: `Refund for Product #${item.productId}`,
++               order_item_type: "line_item",
++               order_id: refundOrderId,
++             },
++           });
++ 
++           // Add lookup entry using the new refund line item's ID
+            await tx.wp_wc_order_product_lookup.create({
+              data: {
+-               order_item_id: BigInt(item.itemId),
++               order_item_id: refundLineItem.order_item_id,
+                order_id: refundOrderId,
+                product_id: BigInt(item.productId),
+                variation_id: BigInt(0),
+                customer_id: originalOrder.customer_id || BigInt(0),
+                date_created: now,
+-               product_qty: -item.quantity,
+-               product_net_revenue: -item.amount,
+-               product_gross_revenue: -item.amount,
+-               rental_price: BigInt(Math.round(itemRentalPrice)),
++               product_qty: -item.quantity, // Negative quantity for refund
++               product_net_revenue: new Decimal(-item.amount),
++               product_gross_revenue: new Decimal(-item.amount),
++               rental_price: BigInt(-itemRentalPrice),
+                coupon_amount: new Decimal(0),
+                tax_amount: new Decimal(0),
+            });
+  
+-           // Also create entries for bundled items with zero amounts
+-           if (item.isBundle && item.bundledItems && item.bundledItems.length > 0) {
++           // Add refund line item meta
++           await tx.wp_woocommerce_order_itemmeta.createMany({
++             data: [
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_product_id",
++                 meta_value: item.productId.toString(),
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_variation_id",
++                 meta_value: "0",
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_qty",
++                 meta_value: (-item.quantity).toString(),
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_tax_class",
++                 meta_value: "",
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_line_subtotal",
++                 meta_value: (-item.amount).toString(),
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_line_subtotal_tax",
++                 meta_value: "0",
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_line_total",
++                 meta_value: (-item.amount).toString(),
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_line_tax",
++                 meta_value: "0",
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_line_tax_data",
++                 meta_value: 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}',
++               },
++               {
++                 order_item_id: refundLineItem.order_item_id,
++                 meta_key: "_refunded_item_id",
++                 meta_value: item.itemId.toString(),
++               }
++             ],
++           });
++ 
++           // Add to refund note with the positive amount for readability
++           refundNoteItems.push(
++             `${productName} (${item.amount} ${originalOrder.currency})`
++           );
++ 
++           // Add to stock adjustments if not a bundle or additionally if it's a simple product
++           if (!item.isBundle) {
++             stockAdjustments.push({
++               productId: item.productId,
++               quantity: item.quantity, // Positive for stock adjustments
++             });
++           }
++ 
++           // Mark original item as restocked
++           await tx.wp_woocommerce_order_itemmeta.create({
++             data: {
++               order_item_id: BigInt(item.itemId),
++               meta_key: "_restock_refunded_items",
++               meta_value: item.quantity.toString(), // Positive for restocking
++             },
++           });
++ 
++           // Process bundled items if this is a bundle
++           if (
++             item.isBundle &&
++             item.bundledItems &&
++             item.bundledItems.length > 0
++           ) {
++             const bundledItemIds: number[] = [];
++             const bundledDescriptions: string[] = [];
++ 
+              for (const bundledItem of item.bundledItems) {
+-               await tx.wp_wc_order_product_lookup.create({
++               // Get bundled product info
++               const bundledProductResult = await tx.wp_posts.findUnique({
++                 where: { ID: BigInt(bundledItem.productId) },
++                 select: { post_title: true },
++               });
++ 
++               const bundledProductName = bundledProductResult
++                 ? bundledProductResult.post_title
++                 : `Product #${bundledItem.productId}`;
++ 
++               // Create refund line item for bundled item
++               const refundBundledItem =
++                 await tx.wp_woocommerce_order_items.create({
+                    data: {
+-                   order_item_id: BigInt(bundledItem.itemId),
++                     order_item_name: bundledProductName,
++                     order_item_type: "line_item",
+                      order_id: refundOrderId,
+-                   product_id: BigInt(bundledItem.productId),
+-                   variation_id: BigInt(0),
+-                   customer_id: originalOrder.customer_id || BigInt(0),
+-                   date_created: now,
+-                   product_qty: -bundledItem.quantity,
+-                   product_net_revenue: new Decimal(0),
+-                   product_gross_revenue: new Decimal(0),
+-                   rental_price: BigInt(0),
+-                   coupon_amount: new Decimal(0),
+-                   tax_amount: new Decimal(0),
+-                   shipping_amount: new Decimal(0),
+-                   shipping_tax_amount: new Decimal(0)
+-                 }
++                   },
++                 });
++ 
++               // For bundled items in refunds, qty should be NEGATIVE
++               const negativeBundledQty = -Math.abs(bundledItem.quantity);
++ 
++               // Create metadata for bundled item
++               await tx.wp_woocommerce_order_itemmeta.createMany({
++                 data: [
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_product_id",
++                     meta_value: bundledItem.productId.toString(),
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_variation_id",
++                     meta_value: "0",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_qty",
++                     meta_value: negativeBundledQty.toString(),
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_tax_class",
++                     meta_value: "",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_line_subtotal",
++                     meta_value: "0",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_line_subtotal_tax",
++                     meta_value: "0",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_line_total",
++                     meta_value: "0",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_line_tax",
++                     meta_value: "0",
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_line_tax_data",
++                     meta_value: 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}',
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_refunded_item_id",
++                     meta_value: bundledItem.itemId.toString(),
++                   },
++                   {
++                     order_item_id: refundBundledItem.order_item_id,
++                     meta_key: "_bundled_by",
++                     meta_value: refundItem.order_item_id.toString(),
++                   },
++                 ],
++               });
++ 
++               // Add to bundled items list
++               bundledItemIds.push(Number(refundBundledItem.order_item_id));
++               bundledDescriptions.push(
++                 `${bundledProductName} (x${bundledItem.quantity})`
++               );
++ 
++               // Add to stock adjustments
++               stockAdjustments.push({
++                 productId: bundledItem.productId,
++                 quantity: bundledItem.quantity, // Positive for stock adjustments
++               });
++ 
++               // Mark original bundled item as restocked
++               await tx.wp_woocommerce_order_itemmeta.create({
++                 data: {
++                   order_item_id: BigInt(bundledItem.itemId),
++                   meta_key: "_restock_refunded_items",
++                   meta_value: bundledItem.quantity.toString(), // Positive for restocking
++                 },
++               });
++             }
++ 
++             // Add bundled items reference to parent item (in serialized PHP array format)
++             if (bundledItemIds.length > 0) {
++               await tx.wp_woocommerce_order_itemmeta.create({
++                 data: {
++                   order_item_id: refundItem.order_item_id,
++                   meta_key: "_bundled_items",
++                   meta_value: `a:${bundledItemIds.length}:{${bundledItemIds
++                     .map((id, index) => `i:${index};i:${id};`)
++                     .join("")}}`,
++                 },
+                });
+              }
+```
+
+---
+
+Men quyidagi o'zgarishlarni amalga oshirdim:
+
+1. Har bir refund item uchun yangi `wp_woocommerce_order_items` yaratiladi
+2. `wp_wc_order_product_lookup` jadvalida yangi yaratilgan order item ID ishlatiladi
+3. Refund item uchun kerakli meta ma'lumotlar qo'shiladi
+4. Bundle itemlar uchun ham alohida order itemlar va meta ma'lumotlar yaratiladi
+
+Bu o'zgarishlar:
+- PRIMARY KEY xatoligini bartaraf etadi chunki har bir refund item uchun yangi unique order_item_id yaratiladi
+- Refund ma'lumotlarini to'g'ri saqlaydi
+- Bundle itemlar uchun ham to'g'ri ma'lumotlarni saqlaydi
+
+Linter xatoliklarini tuzatish uchun yana bir o'zgarish qilamiz:
+
+---
+
+Cancelled
+
+---
+
+
+
+---
+
 
 
 ---
