@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { PrismaClient } from '.prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 interface Order {
   id: bigint;
