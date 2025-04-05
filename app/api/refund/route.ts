@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface RefundRequest {
   orderId: number;
@@ -8,6 +8,8 @@ interface RefundRequest {
   reason?: string;
   refundPayment?: boolean;
   refundType?: "partial" | "full";
+  discountDays: number;      // Skidkadagi kunlar
+  endDate: string;           // Tugatilgan vaqt (ISO string format)
 }
 
 interface RefundItem {
@@ -41,6 +43,8 @@ export async function POST(request: Request) {
       reason = "",
       refundPayment = false,
       refundType = "partial",
+      discountDays,
+      endDate,
     } = body;
 
     if (!orderId) {
@@ -86,11 +90,58 @@ export async function POST(request: Request) {
           where: {
             id: BigInt(orderId),
           },
+          select: {
+            id: true,
+            currency: true,
+            customer_id: true,
+            status: true,
+            start_date: true,
+            end_date: true,
+            discount_days: true,
+            rental_price: true,
+            used_days: true
+          }
         });
 
         if (!originalOrder) {
           throw new Error(`Order with ID ${orderId} not found`);
         }
+
+        // Calculate used days as the difference between end_date and start_date
+        const endDateTime = new Date(endDate);
+        const startDateTime = originalOrder.start_date;
+        
+        if (!startDateTime) {
+          throw new Error("Order start_date is required for rental calculations");
+        }
+
+        const usedDays = Math.ceil(
+          (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (usedDays < 0) {
+          throw new Error("End date cannot be earlier than start date");
+        }
+
+        // Calculate rental price based on used days and discount days
+        const effectiveDays = Math.max(0, usedDays - discountDays);
+        const rentalPrice = effectiveDays * totalRefundAmount;
+
+        // Update the original order with rental calculations
+        await tx.wp_wc_orders.update({
+          where: {
+            id: BigInt(orderId),
+          },
+          data: {
+            end_date: endDateTime,
+            used_days: usedDays,
+            rental_price: BigInt(Math.round(rentalPrice)),
+            discount_days: discountDays,
+            date_updated_gmt: new Date(),
+            customer_note: reason || null,
+            ...(refundType === "full" ? { status: "wc-refunded" } : {})
+          }
+        });
 
         // Get order address info for better refund notes
         const orderAddress = await tx.wp_wc_order_addresses.findFirst({
@@ -144,8 +195,8 @@ export async function POST(request: Request) {
             status: "wc-completed",
             currency: originalOrder.currency || "UZS",
             type: "shop_order_refund",
-            tax_amount: new Prisma.Decimal(0),
-            total_amount: new Prisma.Decimal(-totalRefundAmount),
+            tax_amount: new Decimal(0),
+            total_amount: new Decimal(-totalRefundAmount),
             customer_id: originalOrder.customer_id,
             billing_email: null,
             date_created_gmt: now,
@@ -156,7 +207,12 @@ export async function POST(request: Request) {
             transaction_id: null,
             ip_address: null,
             user_agent: null,
-            customer_note: null,
+            customer_note: reason || null,
+            start_date: originalOrder.start_date,
+            end_date: endDateTime,
+            used_days: usedDays,
+            rental_price: BigInt(Math.round(rentalPrice)),
+            discount_days: discountDays
           },
         });
 
@@ -325,6 +381,28 @@ export async function POST(request: Request) {
             });
           }
 
+          // Add entry to wp_wc_order_product_lookup for the refund
+          await tx.wp_wc_order_product_lookup.create({
+            data: {
+              order_item_id: refundItem.order_item_id,
+              order_id: refundOrderId,
+              product_id: BigInt(item.productId),
+              variation_id: BigInt(0),
+              customer_id: originalOrder.customer_id || BigInt(0),
+              date_created: now,
+              product_qty: negativeQty,
+              product_net_revenue: new Decimal(negativeAmount),
+              product_gross_revenue: new Decimal(negativeAmount),
+              coupon_amount: new Decimal(0),
+              tax_amount: new Decimal(0),
+              shipping_amount: new Decimal(0),
+              shipping_tax_amount: new Decimal(0),
+              used_days: originalOrder.used_days,
+              discount_days: discountDays,
+              rental_price: BigInt(Math.round(Math.abs(negativeAmount) * Math.max(0, (originalOrder.used_days || 0) - discountDays)))
+            }
+          });
+
           // Mark original item as restocked
           await tx.wp_woocommerce_order_itemmeta.create({
             data: {
@@ -426,6 +504,28 @@ export async function POST(request: Request) {
                     meta_value: refundItem.order_item_id.toString(),
                   },
                 ],
+              });
+
+              // Add entry to wp_wc_order_product_lookup for bundled item
+              await tx.wp_wc_order_product_lookup.create({
+                data: {
+                  order_item_id: refundBundledItem.order_item_id,
+                  order_id: refundOrderId,
+                  product_id: BigInt(bundledItem.productId),
+                  variation_id: BigInt(0),
+                  customer_id: originalOrder.customer_id || BigInt(0),
+                  date_created: now,
+                  product_qty: negativeBundledQty,
+                  product_net_revenue: new Decimal(0),
+                  product_gross_revenue: new Decimal(0),
+                  coupon_amount: new Decimal(0),
+                  tax_amount: new Decimal(0),
+                  shipping_amount: new Decimal(0),
+                  shipping_tax_amount: new Decimal(0),
+                  used_days: originalOrder.used_days,
+                  discount_days: discountDays,
+                  rental_price: BigInt(0)
+                }
               });
 
               // Add to bundled items list
@@ -679,10 +779,10 @@ export async function POST(request: Request) {
               order_stock_reduced: null,
               date_paid_gmt: null,
               date_completed_gmt: null,
-              shipping_tax_amount: new Prisma.Decimal(0),
-              shipping_total_amount: new Prisma.Decimal(0),
-              discount_tax_amount: new Prisma.Decimal(0),
-              discount_total_amount: new Prisma.Decimal(0),
+              shipping_tax_amount: new Decimal(0),
+              shipping_total_amount: new Decimal(0),
+              discount_tax_amount: new Decimal(0),
+              discount_total_amount: new Decimal(0),
               recorded_sales: false,
             },
           });
@@ -704,10 +804,9 @@ export async function POST(request: Request) {
         };
       },
       {
-        // Set a longer timeout for complex transactions
         timeout: 30000,
         maxWait: 35000,
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        isolationLevel: "ReadCommitted",
       }
     );
 
