@@ -1,12 +1,19 @@
 // Export order creation services
-export { createOrderRecord } from './createOrderRecord';
-export { createBillingAddress } from './createBillingAddress';
-export { createOperationalData } from './createOperationalData';
-export { createOrderItem } from './createOrderItem';
-export { generateOrderItemMeta } from './createOrderItemMeta';
-export { generateBundleProductMeta } from './createBundleProductMeta';
-export { createBundleItem } from './createBundleItem';
-export { updateProductStock } from './updateProductStock';
+export { createOrderRecord } from "./createOrderRecord";
+export { createBillingAddress } from "./createBillingAddress";
+export { createOperationalData } from "./createOperationalData";
+export { createOrderItem } from "./createOrderItem";
+export {
+  generateOrderItemMeta,
+  generateBundledItemMeta,
+} from "./createOrderItemMeta";
+export { generateBundleProductMeta } from "./createBundleProductMeta";
+export { updateProductStock } from "./updateProductStock";
+export { updateBundledItemStock } from "./updateProductStock";
+export { createOrderProductLookup } from "./createOrderProductLookup";
+export { createOrderStats } from "./createOrderStats";
+export { createBundledItemMeta } from "./createBundledItemMeta";
+export { createOrderItemMetaEntries } from "./createOrderItemMetaEntries";
 
 // Define common interfaces
 export interface ProductItem {
@@ -40,4 +47,4 @@ export interface OrderCreateParams {
   paymentMethod?: string;
   paymentMethodTitle?: string;
   start_date: string;
-} 
+}

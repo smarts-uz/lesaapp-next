@@ -10,6 +10,7 @@ interface CreateOrderParams {
   paymentMethodTitle: string;
   ipAddress: string;
   userAgent: string;
+  startDate: string;
 }
 
 export const createOrderRecord = async ({
@@ -22,6 +23,7 @@ export const createOrderRecord = async ({
   paymentMethodTitle,
   ipAddress,
   userAgent,
+  startDate,
 }: CreateOrderParams) => {
   return tx.wp_wc_orders.create({
     data: {
@@ -35,6 +37,7 @@ export const createOrderRecord = async ({
       billing_email: email || null,
       date_created_gmt: new Date(),
       date_updated_gmt: new Date(),
+      start_date: new Date(startDate),
       parent_order_id: BigInt(0),
       payment_method: paymentMethod,
       payment_method_title: paymentMethodTitle,
