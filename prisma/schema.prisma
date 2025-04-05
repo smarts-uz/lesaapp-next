@@ -390,6 +390,8 @@ model wp_wc_order_product_lookup {
   tax_amount            Float    @default(0)
   shipping_amount       Float    @default(0)
   shipping_tax_amount   Float    @default(0)
+  rental_price          BigInt?
+  used_days             Int?
 
   @@index([customer_id], map: "customer_id")
   @@index([date_created], map: "date_created")
@@ -449,6 +451,14 @@ model wp_wc_orders {
   ip_address           String?   @db.VarChar(100)
   user_agent           String?   @db.Text
   customer_note        String?   @db.Text
+  start_date           DateTime? @db.DateTime(0)
+  discount_days        Int?
+  rental_price         BigInt?
+  used_days            Int?
+  end_date             DateTime? @db.DateTime(0)
+  is_completed         Boolean?
+  rental_status        String?   @db.VarChar(255)
+  loan_price           BigInt?
 
   @@index([billing_email(length: 191)], map: "billing_email")
   @@index([customer_id, billing_email(length: 171)], map: "customer_id_billing_email")
@@ -730,4 +740,29 @@ model wp_woocommerce_tax_rates {
   @@index([tax_rate_country], map: "tax_rate_country")
   @@index([tax_rate_priority], map: "tax_rate_priority")
   @@index([tax_rate_state(length: 2)], map: "tax_rate_state")
+}
+
+model wp_wc_order_lost_product {
+  order_item_id         BigInt   @id @db.UnsignedBigInt
+  order_id              BigInt   @db.UnsignedBigInt
+  product_id            BigInt   @db.UnsignedBigInt
+  variation_id          BigInt   @db.UnsignedBigInt
+  customer_id           BigInt?  @db.UnsignedBigInt
+  date_created          DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
+  product_qty           Int
+  product_net_revenue   Float    @default(0)
+  product_gross_revenue Float    @default(0)
+  coupon_amount         Float    @default(0)
+  tax_amount            Float    @default(0)
+  shipping_amount       Float    @default(0)
+  shipping_tax_amount   Float    @default(0)
+  rental_price          BigInt?
+  used_days             Int?
+  regular_price         BigInt?
+  sale_price            BigInt?
+
+  @@index([customer_id], map: "customer_id")
+  @@index([date_created], map: "date_created")
+  @@index([order_id], map: "order_id")
+  @@index([product_id], map: "product_id")
 }
