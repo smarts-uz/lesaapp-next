@@ -44,7 +44,7 @@ function OrdersContent() {
     const fetchOrders = async () => {
       try {
         setIsLoadingOrders(true)
-        const response = await fetch('/api/orders')
+        const response = await fetch('/api/order',{method: 'POST', body: JSON.stringify({orderId})})
         if (!response.ok) throw new Error('Failed to fetch orders')
         const data = await response.json()
         setOrders(data)
@@ -65,7 +65,7 @@ function OrdersContent() {
     const loadOrder = async (id: string) => {
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/orders/${id}`)
+        const response = await fetch(`/api/order/${id}`)
         if (!response.ok) {
           throw new Error('Failed to fetch order')
         }
@@ -81,19 +81,6 @@ function OrdersContent() {
 
     loadOrder(orderId)
   }, [orderId])
-
-  const handleRefundComplete = (refundData: Refund) => {
-    if (orderDetails) {
-      // Add the new refund to the order's refunds array
-      const updatedOrder = {
-        ...orderDetails,
-        refunds: [...(orderDetails.refunds || []), refundData],
-        // If it's a full refund, update the order status
-        status: refundData.refund_type === "full" ? "refunded" : orderDetails.status,
-      }
-      setOrderDetails(updatedOrder)
-    }
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
