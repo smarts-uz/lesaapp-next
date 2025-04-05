@@ -1,25 +1,39 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { PrismaClient } from '.prisma/client'
+
+interface Order {
+  id: bigint;
+  date_created_gmt: Date;
+  status: string;
+  total_amount: number;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface OrderItem {
+  product_id: number;
+  quantity: number;
+  price: number;
+  name?: string;
+  variationId?: number;
+  isBundle?: boolean;
+  bundleItems?: Array<{
+    product_id: number;
+    quantity: number;
+  }>;
+}
 
 export async function GET() {
   try {
-    const orders = await prisma.$queryRaw<
-      Array<{
-        id: bigint;
-        date_created_gmt: Date;
-        status: string;
-        total_amount: number;
-        first_name: string | null;
-        last_name: string | null;
-      }>
-    >`
+    const orders = await prisma.$queryRaw<Order[]>`
       SELECT o.id, o.date_created_gmt, o.status, o.total_amount, oa.first_name, oa.last_name
       FROM wp_wc_orders o
       LEFT JOIN wp_wc_order_addresses oa ON o.id = oa.order_id AND oa.address_type = 'billing'
       ORDER BY o.date_created_gmt DESC
     `;
 
-    const formattedOrders = orders.map((order) => ({
+    const formattedOrders = orders.map((order: Order) => ({
       id: order.id.toString(),
       number: `#ORD-${order.id.toString().padStart(3, "0")}`,
       date: order.date_created_gmt?.toISOString() || new Date().toISOString(),
@@ -46,7 +60,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { 
       customer, 
-      products, 
+      products,
       status = "wc-processing", 
       paymentMethod = "cod", 
       paymentMethodTitle = "Cash on delivery" 
@@ -57,10 +71,11 @@ export async function POST(request: Request) {
     }
 
     // Calculate total amount from products
-    const totalAmount = products.reduce((total, product) => total + (product.price * product.quantity), 0);
+    const totalAmount = products.reduce((total, product: OrderItem) => 
+      total + (product.price * product.quantity), 0);
 
     // Create order using Prisma transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
       // 1. Create the main order record
       const order = await tx.wp_wc_orders.create({
         data: {
@@ -122,72 +137,218 @@ export async function POST(request: Request) {
         }
       });
 
-      // 4. Create order items
+      // 4. Create order items and handle bundles
       for (const product of products) {
         const orderItem = await tx.wp_woocommerce_order_items.create({
           data: {
-            order_item_name: product.name,
+            order_item_name: product.name || `Product #${product.product_id}`,
             order_item_type: "line_item",
             order_id: order.id
           }
         });
 
-        // 5. Create order item meta
-        await tx.wp_woocommerce_order_itemmeta.createMany({
-          data: [
+        // Create base order item meta
+        const baseItemMeta = [
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_product_id",
+            meta_value: product.product_id.toString()
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_variation_id",
+            meta_value: (product.variationId || 0).toString()
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_qty",
+            meta_value: product.quantity.toString()
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_tax_class",
+            meta_value: ""
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_line_subtotal",
+            meta_value: (product.price * product.quantity).toString()
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_line_subtotal_tax",
+            meta_value: "0"
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_line_total",
+            meta_value: (product.price * product.quantity).toString()
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_line_tax",
+            meta_value: "0"
+          },
+          {
+            order_item_id: orderItem.order_item_id,
+            meta_key: "_line_tax_data",
+            meta_value: "a:2:{s:5:\"total\";a:0:{}s:8:\"subtotal\";a:0:{}}"
+          }
+        ];
+
+        // If this is a bundle product, add bundle-specific meta
+        if (product.isBundle && product.bundleItems) {
+          const bundleCartKey = Math.random().toString(36).substring(2, 15);
+          const bundledItemsKeys = product.bundleItems.map(() => 
+            Math.random().toString(36).substring(2, 15));
+
+          // Add bundle meta
+          baseItemMeta.push(
             {
               order_item_id: orderItem.order_item_id,
-              meta_key: "_product_id",
-              meta_value: product.id.toString()
+              meta_key: "_bundled_items",
+              meta_value: JSON.stringify(bundledItemsKeys)
             },
             {
               order_item_id: orderItem.order_item_id,
-              meta_key: "_variation_id",
-              meta_value: (product.variationId || 0).toString()
+              meta_key: "_bundle_group_mode",
+              meta_value: "parent"
             },
             {
               order_item_id: orderItem.order_item_id,
-              meta_key: "_qty",
-              meta_value: product.quantity.toString()
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_tax_class",
-              meta_value: ""
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_line_subtotal",
-              meta_value: (product.price * product.quantity).toString()
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_line_subtotal_tax",
-              meta_value: "0"
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_line_total",
-              meta_value: (product.price * product.quantity).toString()
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_line_tax",
-              meta_value: "0"
-            },
-            {
-              order_item_id: orderItem.order_item_id,
-              meta_key: "_line_tax_data",
-              meta_value: "a:2:{s:5:\"total\";a:0:{}s:8:\"subtotal\";a:0:{}}"
+              meta_key: "_bundle_cart_key",
+              meta_value: bundleCartKey
             }
-          ]
+          );
+
+          // Create bundled items
+          for (const [index, bundleItem] of product.bundleItems.entries()) {
+            const bundledOrderItem = await tx.wp_woocommerce_order_items.create({
+              data: {
+                order_item_name: `Product #${bundleItem.product_id}`,
+                order_item_type: "line_item",
+                order_id: order.id
+              }
+            });
+
+            // Add bundled item meta
+            await tx.wp_woocommerce_order_itemmeta.createMany({
+              data: [
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_product_id",
+                  meta_value: bundleItem.product_id.toString()
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_variation_id",
+                  meta_value: "0"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_qty",
+                  meta_value: bundleItem.quantity.toString()
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_tax_class",
+                  meta_value: ""
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_line_subtotal",
+                  meta_value: "0"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_line_subtotal_tax",
+                  meta_value: "0"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_line_total",
+                  meta_value: "0"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_line_tax",
+                  meta_value: "0"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_line_tax_data",
+                  meta_value: "a:2:{s:5:\"total\";a:0:{}s:8:\"subtotal\";a:0:{}}"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_bundled_by",
+                  meta_value: bundleCartKey
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_bundled_item_id",
+                  meta_value: (index + 1).toString()
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_bundled_item_priced_individually",
+                  meta_value: "no"
+                },
+                {
+                  order_item_id: bundledOrderItem.order_item_id,
+                  meta_key: "_bundled_item_needs_shipping",
+                  meta_value: "yes"
+                }
+              ]
+            });
+
+            // Update stock for bundled item
+            await tx.wp_wc_product_meta_lookup.upsert({
+              where: { 
+                product_id: BigInt(bundleItem.product_id) 
+              },
+              create: {
+                product_id: BigInt(bundleItem.product_id),
+                stock_quantity: -bundleItem.quantity,
+                total_sales: bundleItem.quantity,
+                min_price: 0,
+                max_price: 0,
+                rating_count: 0,
+                average_rating: 0
+              },
+              update: {
+                stock_quantity: {
+                  decrement: bundleItem.quantity
+                },
+                total_sales: {
+                  increment: bundleItem.quantity
+                }
+              }
+            });
+          }
+        }
+
+        // Create order item meta
+        await tx.wp_woocommerce_order_itemmeta.createMany({
+          data: baseItemMeta
         });
 
-        // 6. Update product stock if needed
-        if (product.updateStock) {
-          await tx.wp_wc_product_meta_lookup.update({
-            where: { product_id: BigInt(product.id) },
-            data: {
+        // Update product stock if not a bundle
+        if (!product.isBundle) {
+          await tx.wp_wc_product_meta_lookup.upsert({
+            where: { 
+              product_id: BigInt(product.product_id) 
+            },
+            create: {
+              product_id: BigInt(product.product_id),
+              stock_quantity: -product.quantity,
+              total_sales: product.quantity,
+              min_price: product.price,
+              max_price: product.price,
+              rating_count: 0,
+              average_rating: 0
+            },
+            update: {
               stock_quantity: {
                 decrement: product.quantity
               },
@@ -198,22 +359,6 @@ export async function POST(request: Request) {
           });
         }
       }
-
-      // 7. Add basic order meta
-      await tx.wp_wc_orders_meta.createMany({
-        data: [
-          {
-            order_id: order.id,
-            meta_key: "is_vat_exempt",
-            meta_value: "no"
-          },
-          {
-            order_id: order.id,
-            meta_key: "_billing_address_index",
-            meta_value: customer ? `${customer.firstName || ""} ${customer.lastName || ""} ${customer.phone || ""}` : ""
-          }
-        ]
-      });
 
       return {
         id: order.id.toString(),
