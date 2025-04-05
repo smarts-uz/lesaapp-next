@@ -71,4 +71,44 @@ The order creation endpoint should now work correctly without schema validation 
 
 ---
 
+<<<<<<< HEAD
+=======
+_**User**_
+
+For the code present, we get this error:
+```
+Module '"@prisma/client"' has no exported member 'PrismaClient'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+_**Assistant**_
+
+The error occurs because the import path is incorrect. For the Prisma client type, we should import from `.prisma/client` instead of `@prisma/client`. Let me fix that:
+
+---
+
+```diff
+  import { NextResponse } from "next/server";
+  import { prisma } from "@/lib/prisma";
+- import  { PrismaClient } from '@prisma/client'
++ import type { PrismaClient } from '.prisma/client'
+  
+  interface Order {
+```
+
+---
+
+I made two key changes:
+1. Changed the import path from `@prisma/client` to `.prisma/client`
+2. Added `type` keyword since we only need the type definition
+
+This should resolve the import error.
+
+---
+
+
+
+>>>>>>> d071619 (Fix PrismaClient import error: update import path from '@prisma/client' to '.prisma/client' and add 'type' keyword for type definition. This resolves the module export issue in the order creation logic.)
 ---
