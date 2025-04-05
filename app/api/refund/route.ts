@@ -8,8 +8,8 @@ interface RefundRequest {
   reason?: string;
   refundPayment?: boolean;
   refundType?: "partial" | "full";
-  discountDays: number;      // Skidkadagi kunlar
-  endDate: string;           // Tugatilgan vaqt (ISO string format)
+  discountDays: number; // Skidkadagi kunlar
+  endDate: string; // Tugatilgan vaqt (ISO string format)
 }
 
 interface RefundItem {
@@ -99,8 +99,8 @@ export async function POST(request: Request) {
             end_date: true,
             discount_days: true,
             rental_price: true,
-            used_days: true
-          }
+            used_days: true,
+          },
         });
 
         if (!originalOrder) {
@@ -110,13 +110,16 @@ export async function POST(request: Request) {
         // Calculate used days as the difference between end_date and start_date
         const endDateTime = new Date(endDate);
         const startDateTime = originalOrder.start_date;
-        
+
         if (!startDateTime) {
-          throw new Error("Order start_date is required for rental calculations");
+          throw new Error(
+            "Order start_date is required for rental calculations"
+          );
         }
 
         const usedDays = Math.ceil(
-          (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60 * 24)
+          (endDateTime.getTime() - startDateTime.getTime()) /
+            (1000 * 60 * 60 * 24)
         );
 
         if (usedDays < 0) {
@@ -138,8 +141,8 @@ export async function POST(request: Request) {
             rental_price: BigInt(Math.round(rentalPrice)),
             date_updated_gmt: new Date(),
             customer_note: reason || null,
-            ...(refundType === "full" ? { status: "wc-refunded" } : {})
-          }
+            ...(refundType === "full" ? { status: "wc-refunded" } : {}),
+          },
         });
 
         // Get order address info for better refund notes
@@ -194,8 +197,8 @@ export async function POST(request: Request) {
             status: "wc-completed",
             currency: originalOrder.currency || "UZS",
             type: "shop_order_refund",
-            tax_amount: new Decimal(0),
-            total_amount: new Decimal(-totalRefundAmount),
+            tax_amount: 0,
+            total_amount: -totalRefundAmount,
             customer_id: originalOrder.customer_id,
             billing_email: null,
             date_created_gmt: now,
@@ -396,8 +399,13 @@ export async function POST(request: Request) {
               shipping_amount: Number(0),
               shipping_tax_amount: Number(0),
               used_days: originalOrder.used_days,
-              rental_price: BigInt(Math.round(Math.abs(negativeAmount) * Math.max(0, (originalOrder.used_days || 0) - discountDays)))
-            }
+              rental_price: BigInt(
+                Math.round(
+                  Math.abs(negativeAmount) *
+                    Math.max(0, (originalOrder.used_days || 0) - discountDays)
+                )
+              ),
+            },
           });
 
           // Mark original item as restocked
@@ -520,8 +528,8 @@ export async function POST(request: Request) {
                   shipping_amount: Number(0),
                   shipping_tax_amount: Number(0),
                   used_days: originalOrder.used_days,
-                  rental_price: BigInt(0)
-                }
+                  rental_price: BigInt(0),
+                },
               });
 
               // Add to bundled items list
@@ -775,10 +783,10 @@ export async function POST(request: Request) {
               order_stock_reduced: null,
               date_paid_gmt: null,
               date_completed_gmt: null,
-              shipping_tax_amount: new Decimal(0),
-              shipping_total_amount: new Decimal(0),
-              discount_tax_amount: new Decimal(0),
-              discount_total_amount: new Decimal(0),
+              shipping_tax_amount: 0,
+              shipping_total_amount: 0,
+              discount_tax_amount: 0,
+              discount_total_amount: 0,
               recorded_sales: false,
             },
           });

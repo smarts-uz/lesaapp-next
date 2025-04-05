@@ -140,6 +140,77 @@ Fix: Replace `new Decimal()` with `Number()` and remove the `discount_days` prop
 
 ---
 
+_**User**_
+
+For the code present, we get this error:
+```
+Type 'Decimal' is not assignable to type 'number'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+              used_days: usedDays,
+              rental_price: BigInt(Math.round(rentalPrice)),
+-             discount_days: discountDays,
+              date_updated_gmt: new Date(),
+              customer_note: reason || null,
+              used_days: usedDays,
+              rental_price: BigInt(Math.round(rentalPrice)),
+-             discount_days: discountDays
+            },
+          });
+                date_created: now,
+                product_qty: negativeQty,
+-               product_net_revenue: new Decimal(negativeAmount),
+-               product_gross_revenue: new Decimal(negativeAmount),
+-               coupon_amount: new Decimal(0),
+-               tax_amount: new Decimal(0),
+-               shipping_amount: new Decimal(0),
+-               shipping_tax_amount: new Decimal(0),
++               product_net_revenue: Number(negativeAmount),
++               product_gross_revenue: Number(negativeAmount),
++               coupon_amount: Number(0),
++               tax_amount: Number(0),
++               shipping_amount: Number(0),
++               shipping_tax_amount: Number(0),
+                used_days: originalOrder.used_days,
+-               discount_days: discountDays,
+                rental_price: BigInt(Math.round(Math.abs(negativeAmount) * Math.max(0, (originalOrder.used_days || 0) - discountDays)))
+              }
+                    date_created: now,
+                    product_qty: negativeBundledQty,
+-                   product_net_revenue: new Decimal(0),
+-                   product_gross_revenue: new Decimal(0),
+-                   coupon_amount: new Decimal(0),
+-                   tax_amount: new Decimal(0),
+-                   shipping_amount: new Decimal(0),
+-                   shipping_tax_amount: new Decimal(0),
++                   product_net_revenue: Number(0),
++                   product_gross_revenue: Number(0),
++                   coupon_amount: Number(0),
++                   tax_amount: Number(0),
++                   shipping_amount: Number(0),
++                   shipping_tax_amount: Number(0),
+                    used_days: originalOrder.used_days,
+-                   discount_days: discountDays,
+                    rental_price: BigInt(0)
+                  }
+```
+
+---
+
+Replace `new Decimal()` with `Number()` for all numeric fields and remove the `discount_days` property since it's not in the schema.
+
+---
+
 
 
 ---
