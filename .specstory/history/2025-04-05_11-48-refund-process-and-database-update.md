@@ -205,6 +205,212 @@ Xatolik `order_item_id` majburiy maydon ekanligini ko'rsatmoqda. Men ikkinchi ma
 
 ---
 
+```diff
+              ],
+            });
+- 
+-           // Add entry to wp_wc_order_product_lookup for the refund
+-           await tx.wp_wc_order_product_lookup.create({
+-             data: {
+-               order_item_id: refundItem.order_item_id,
+-               order_id: refundOrderId,
+-               product_id: BigInt(item.productId),
+-               variation_id: BigInt(0),
+-               customer_id: originalOrder.customer_id || BigInt(0),
+-               date_created: now,
+-               product_qty: negativeQty,
+-               product_net_revenue: new Decimal(negativeAmount),
+-               product_gross_revenue: new Decimal(negativeAmount),
+-               coupon_amount: new Decimal(0),
+-               tax_amount: new Decimal(0),
+-               shipping_amount: new Decimal(0),
+-               shipping_tax_amount: new Decimal(0)
+-             }
+-           });
+  
+            // Add to refund note with the positive amount for readability
+```
+
+---
+
+Endi `wp_wc_order_product_lookup` jadvaliga ma'lumotlarni qo'shishni to'g'rilaymiz:
+
+---
+
+```diff
+            await tx.wp_wc_order_product_lookup.create({
+              data: {
++               order_item_id: refundItem.order_item_id,
+                order_id: refundOrderId,
+                product_id: BigInt(item.productId),
+                variation_id: BigInt(0),
+                customer_id: originalOrder.customer_id || BigInt(0),
+                date_created: now,
+-               product_qty: -item.quantity, // Negative quantity for refunds
+-               product_net_revenue: -item.amount, // Negative amount for refunds
+-               product_gross_revenue: -item.amount, // Negative amount for refunds
++               product_qty: negativeQty,
++               product_net_revenue: new Decimal(negativeAmount),
++               product_gross_revenue: new Decimal(negativeAmount),
+                coupon_amount: new Decimal(0),
+                tax_amount: new Decimal(0),
+                shipping_amount: new Decimal(0),
+-               shipping_tax_amount: new Decimal(0),
+-             },
++               shipping_tax_amount: new Decimal(0)
++             }
+            });
+  
+```
+
+---
+
+Men quyidagi o'zgarishlarni qildim:
+
+1. Ikkinchi marta qo'shilgan `wp_wc_order_product_lookup.create` qismini o'chirdim chunki u ortiqcha edi
+2. Birinchi `wp_wc_order_product_lookup.create` qismiga `order_item_id` maydonini qo'shdim
+3. Miqdorlar va narxlar uchun `negativeQty` va `negativeAmount` o'zgaruvchilarini ishlatdim, chunki ular allaqachon manfiy qiymatga ega
+
+Bu o'zgarishlar bilan refund qilingan mahsulotlar `wp_wc_order_product_lookup` jadvalida to'g'ri aks ettiriladi va WooCommerce hisobotlari to'g'ri ishlaydi.
+
+---
+
+_**User**_
+
+ wp_wc_order_product_lookup ga orderga yoziladgan used_daysni yozish kerak va productni price bilan rental_price qoshish kerak har bir product uchun qo'shilsin 
+
+---
+
+_**Assistant**_
+
+Men `wp_wc_order_product_lookup` jadvaliga `used_days`, `price` va `rental_price` maydonlarini qo'shishni taklif qilaman:
+
+---
+
+```diff
+                tax_amount: new Decimal(0),
+                shipping_amount: new Decimal(0),
+-               shipping_tax_amount: new Decimal(0)
++               shipping_tax_amount: new Decimal(0),
++               used_days: usedDays,
++               price: new Decimal(item.amount),
++               rental_price: new Decimal(item.amount * effectiveDays)
+              }
+            });
+                    tax_amount: new Decimal(0),
+                    shipping_amount: new Decimal(0),
+-                   shipping_tax_amount: new Decimal(0)
++                   shipping_tax_amount: new Decimal(0),
++                   used_days: usedDays,
++                   price: new Decimal(0),
++                   rental_price: new Decimal(0)
+                  }
+                });
+```
+
+---
+
+Men quyidagi o'zgarishlarni qildim:
+
+1. Asosiy refund item uchun:
+```typescript
+{
+  // ... boshqa maydonlar ...
+  used_days: usedDays,                                  // Foydalanilgan kunlar
+  price: new Decimal(item.amount),                      // Mahsulot narxi
+  rental_price: new Decimal(item.amount * effectiveDays) // Ijara narxi (kunlik narx * effektiv kunlar)
+}
+```
+
+2. Bundle itemlar uchun:
+```typescript
+{
+  // ... boshqa maydonlar ...
+  used_days: usedDays,        // Foydalanilgan kunlar
+  price: new Decimal(0),      // Bundle itemlar uchun narx 0
+  rental_price: new Decimal(0) // Bundle itemlar uchun ijara narxi 0
+}
+```
+
+Bu o'zgarishlar bilan:
+1. Har bir mahsulot uchun foydalanilgan kunlar (`used_days`) saqlanadi
+2. Asosiy mahsulotlar uchun:
+   - `price`: mahsulotning kunlik narxi
+   - `rental_price`: mahsulotning umumiy ijara narxi (kunlik narx * (foydalanilgan kunlar - chegirma kunlari))
+3. Bundle mahsulotlar uchun narx va ijara narxi 0 qilib qo'yiladi, chunki ularning narxi asosiy mahsulot narxiga kiritilgan
+
+Bu ma'lumotlar WooCommerce hisobotlarida har bir mahsulot bo'yicha ijara kunlari va narxlarini ko'rish imkonini beradi.
+
+---
+
+_**User**_
+
+        error
+
+---
+
+_**Assistant**_
+
+Xatolik `wp_wc_order_product_lookup` jadvalida `price`, `rental_price` va `used_days` maydonlari yo'qligini ko'rsatmoqda. Bu maydonlarni qo'shishdan oldin Prisma sxemasini yangilashimiz kerak.
+
+Keling, `wp_wc_order_product_lookup` jadvaliga faqat mavjud maydonlarni qo'shamiz:
+
+---
+
+```diff
+                tax_amount: new Decimal(0),
+                shipping_amount: new Decimal(0),
+-               shipping_tax_amount: new Decimal(0),
+-               used_days: usedDays,
+-               price: new Decimal(item.amount),
+-               rental_price: new Decimal(item.amount * effectiveDays)
++               shipping_tax_amount: new Decimal(0)
+              }
+            });
+                    tax_amount: new Decimal(0),
+                    shipping_amount: new Decimal(0),
+-                   shipping_tax_amount: new Decimal(0),
+-                   used_days: usedDays,
+-                   price: new Decimal(0),
+-                   rental_price: new Decimal(0)
++                   shipping_tax_amount: new Decimal(0)
+                  }
+                });
+```
+
+---
+
+Men `wp_wc_order_product_lookup` jadvalidan qo'shimcha maydonlarni (`used_days`, `price`, `rental_price`) olib tashladim, chunki ular jadval sxemasida mavjud emas. 
+
+Agar bu maydonlarni qo'shish kerak bo'lsa, avval Prisma sxemasini yangilash kerak bo'ladi. Buning uchun:
+
+1. MySQL da jadvalga yangi ustunlar qo'shish:
+```sql
+ALTER TABLE wp_wc_order_product_lookup
+ADD COLUMN used_days INT DEFAULT 0,
+ADD COLUMN price DECIMAL(19,4) DEFAULT 0,
+ADD COLUMN rental_price DECIMAL(19,4) DEFAULT 0;
+```
+
+2. Prisma sxemasini yangilash:
+```prisma
+model wp_wc_order_product_lookup {
+  // ... mavjud maydonlar ...
+  used_days      Int?      @default(0)
+  price          Decimal?  @default(0) @db.Decimal(19,4)
+  rental_price   Decimal?  @default(0) @db.Decimal(19,4)
+}
+```
+
+3. Prisma klientini qayta generatsiya qilish:
+```bash
+npx prisma generate
+```
+
+Yuqoridagi o'zgarishlarni amalga oshirgandan so'ng, biz `wp_wc_order_product_lookup` jadvaliga yangi maydonlarni qo'sha olamiz. Xohlaysizmi men bu o'zgarishlarni qo'shishni boshlashim mumkin?
+
+---
+
 
 
 ---

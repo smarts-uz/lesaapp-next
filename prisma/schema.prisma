@@ -393,6 +393,7 @@ model wp_wc_order_product_lookup {
   shipping_tax_amount   Float    @default(0)
   rental_price          BigInt?
   used_days             Int?
+  discount_days         Int?
 
   @@index([customer_id], map: "customer_id")
   @@index([date_created], map: "date_created")

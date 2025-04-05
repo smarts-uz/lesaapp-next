@@ -396,7 +396,10 @@ export async function POST(request: Request) {
               coupon_amount: new Decimal(0),
               tax_amount: new Decimal(0),
               shipping_amount: new Decimal(0),
-              shipping_tax_amount: new Decimal(0)
+              shipping_tax_amount: new Decimal(0),
+              used_days: originalOrder.used_days,
+              discount_days: discountDays,
+              rental_price: BigInt(Math.round(Math.abs(negativeAmount) * Math.max(0, (originalOrder.used_days || 0) - discountDays)))
             }
           });
 
@@ -518,7 +521,10 @@ export async function POST(request: Request) {
                   coupon_amount: new Decimal(0),
                   tax_amount: new Decimal(0),
                   shipping_amount: new Decimal(0),
-                  shipping_tax_amount: new Decimal(0)
+                  shipping_tax_amount: new Decimal(0),
+                  used_days: originalOrder.used_days,
+                  discount_days: discountDays,
+                  rental_price: BigInt(0)
                 }
               });
 
