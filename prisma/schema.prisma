@@ -222,6 +222,7 @@ model wp_users {
   user_activation_key String   @default("") @db.VarChar(255)
   user_status         Int      @default(0)
   display_name        String   @default("") @db.VarChar(250)
+  phone               String?  @db.VarChar(255)
 
   @@index([user_email], map: "user_email")
   @@index([user_login], map: "user_login_key")
