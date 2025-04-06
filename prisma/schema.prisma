@@ -223,6 +223,8 @@ model wp_users {
   user_status         Int      @default(0)
   display_name        String   @default("") @db.VarChar(250)
   phone               String?  @db.VarChar(255)
+  is_blacklist        Boolean?
+  client_type         String?  @db.VarChar(255)
 
   @@index([user_email], map: "user_email")
   @@index([user_login], map: "user_login_key")
