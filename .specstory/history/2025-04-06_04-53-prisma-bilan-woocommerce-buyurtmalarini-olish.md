@@ -1952,7 +1952,801 @@ bizdagi lookupda - dan kelgan sonlarni qoshib chaqrmoqda yani 5 ta productdan qa
 
 _**Assistant**_
 
+Ah, tushundim. Muammo shundaki, refund qilingan mahsulotlar miqdori manfiy son (-2) sifatida saqlanadi, va biz uni qo'shayotganimizda (sum + refund.product_qty) noto'g'ri natija chiqyapti. Buni tuzatamiz:
 
+---
+
+```diff
+      const convertedOriginalProducts = convertRawProducts(originalProducts as RawOrderProduct[]);
+      const convertedRefundProducts = convertRawProducts(refundedProducts as RawOrderProduct[]);
++ 
++     // Process refunded products to use absolute values
++     const processedRefundProducts = convertedRefundProducts.map(product => ({
++       ...product,
++       product_qty: Math.abs(product.product_qty),
++       product_net_revenue: Math.abs(product.product_net_revenue),
++       product_gross_revenue: Math.abs(product.product_gross_revenue)
++     }));
+  
+      // Calculate remaining products (original - refunded)
+      const remainingProducts = convertedOriginalProducts.map((originalProduct: OrderProduct) => {
+-       const refundedQty = convertedRefundProducts
++       const refundedQty = processedRefundProducts
+          .filter((refund: OrderProduct) => refund.product_id === originalProduct.product_id)
+          .reduce((sum: number, refund: OrderProduct) => sum + refund.product_qty, 0);
+        },
+        refundedProducts: {
+-         products: convertedRefundProducts,
+-         totalQuantity: convertedRefundProducts.reduce((sum: number, product: OrderProduct) => 
++         products: processedRefundProducts,
++         totalQuantity: processedRefundProducts.reduce((sum: number, product: OrderProduct) => 
+            sum + product.product_qty, 0)
+        },
+```
+
+---
+
+Asosiy o'zgarishlar:
+
+1. Refund mahsulotlar uchun yangi processedRefundProducts yaratdim, bu yerda:
+   ```typescript
+   const processedRefundProducts = convertedRefundProducts.map(product => ({
+     ...product,
+     product_qty: Math.abs(product.product_qty),
+     product_net_revenue: Math.abs(product.product_net_revenue),
+     product_gross_revenue: Math.abs(product.product_gross_revenue)
+   }))
+   ```
+   - `Math.abs()` yordamida manfiy sonlarni musbat sonlarga o'zgartirdik
+   - Narxlar ham musbat songa o'zgartirildi
+
+2. Qolgan mahsulotlarni hisoblashda endi processedRefundProducts ishlatiladi:
+   ```typescript
+   const refundedQty = processedRefundProducts
+     .filter((refund: OrderProduct) => refund.product_id === originalProduct.product_id)
+     .reduce((sum: number, refund: OrderProduct) => sum + refund.product_qty, 0)
+   ```
+
+3. API javobida ham processedRefundProducts ishlatiladi:
+   ```typescript
+   refundedProducts: {
+     products: processedRefundProducts,
+     totalQuantity: processedRefundProducts.reduce(...)
+   }
+   ```
+
+Endi, agar:
+- Original buyurtmada 5 ta mahsulot bo'lsa
+- Refund buyurtmada -2 ta mahsulot bo'lsa (manfiy son)
+
+Natija:
+- Original: 5 ta
+- Refund: 2 ta (Math.abs(-2) = 2)
+- Qolgan: 3 ta (5 - 2 = 3)
+
+Bu o'zgarishlar bilan refund miqdorlarini to'g'ri hisoblay olamiz va noto'g'ri qo'shilishlarni oldini olamiz.
+
+---
+
+_**User**_
+
+@route.ts  resposga qarasak productlar qty si xato chiqmoqda shun togrlash kerak mavjud parent order product qty dan refound order nign product qty ni ayirib chiqarish kerak ediu
+
+---
+
+_**Assistant**_
+
+Ha, to'g'ri. Refund qilingan mahsulotlarning qty'sini to'g'ri hisoblash kerak. Muammo shundaki, bir xil product_id uchun bir nechta mahsulotlar bo'lishi mumkin. Keling, getRefundSummary funksiyasini qayta yozamiz:
+
+---
+
+```diff
+    }));
+  }
++ 
++ /**
++  * Combine products with the same product_id
++  */
++ function combineProducts(products: OrderProduct[]): OrderProduct[] {
++   const productMap = new Map<string, OrderProduct>();
++ 
++   products.forEach(product => {
++     const key = `${product.product_id}-${product.variation_id}`;
++     if (productMap.has(key)) {
++       const existing = productMap.get(key)!;
++       productMap.set(key, {
++         ...existing,
++         product_qty: existing.product_qty + product.product_qty,
++         product_net_revenue: existing.product_net_revenue + product.product_net_revenue,
++         product_gross_revenue: existing.product_gross_revenue + product.product_gross_revenue
++       });
++     } else {
++       productMap.set(key, { ...product });
++     }
++   });
++ 
++   return Array.from(productMap.values());
++ }
+  
+  /**
+      const convertedRefundProducts = convertRawProducts(refundedProducts as RawOrderProduct[]);
+  
+-     // Process refunded products to use absolute values
+-     const processedRefundProducts = convertedRefundProducts.map(product => ({
++     // Combine products with same product_id in original order
++     const combinedOriginalProducts = combineProducts(convertedOriginalProducts);
++ 
++     // Process and combine refunded products
++     const processedRefundProducts = combineProducts(
++       convertedRefundProducts.map(product => ({
+          ...product,
+          product_qty: Math.abs(product.product_qty),
+          product_net_revenue: Math.abs(product.product_net_revenue),
+          product_gross_revenue: Math.abs(product.product_gross_revenue)
+-     }));
++       }))
++     );
+  
+-     // Calculate remaining products (original - refunded)
+-     const remainingProducts = convertedOriginalProducts.map((originalProduct: OrderProduct) => {
+-       const refundedQty = processedRefundProducts
+-         .filter((refund: OrderProduct) => refund.product_id === originalProduct.product_id)
+-         .reduce((sum: number, refund: OrderProduct) => sum + refund.product_qty, 0);
++     // Calculate remaining products
++     const remainingProducts = combinedOriginalProducts.map(originalProduct => {
++       const refundProduct = processedRefundProducts.find(
++         refund => refund.product_id === originalProduct.product_id &&
++                   refund.variation_id === originalProduct.variation_id
++       );
++ 
++       const refundedQty = refundProduct ? refundProduct.product_qty : 0;
++       const remainingQty = originalProduct.product_qty - refundedQty;
++ 
++       if (remainingQty <= 0) {
++         return null;
++       }
+  
+        return {
+          ...originalProduct,
+-         product_qty: originalProduct.product_qty - refundedQty
++         product_qty: remainingQty,
++         product_net_revenue: (originalProduct.product_net_revenue / originalProduct.product_qty) * remainingQty,
++         product_gross_revenue: (originalProduct.product_gross_revenue / originalProduct.product_qty) * remainingQty
+        };
+-     }).filter((product: OrderProduct) => product.product_qty > 0);
++     }).filter((product): product is OrderProduct => product !== null);
+  
+      return {
+        originalOrder: {
+-         products: convertedOriginalProducts,
+-         totalQuantity: convertedOriginalProducts.reduce((sum: number, product: OrderProduct) => 
++         products: combinedOriginalProducts,
++         totalQuantity: combinedOriginalProducts.reduce((sum, product) => 
+            sum + product.product_qty, 0)
+        },
+        refundedProducts: {
+          products: processedRefundProducts,
+-         totalQuantity: processedRefundProducts.reduce((sum: number, product: OrderProduct) => 
++         totalQuantity: processedRefundProducts.reduce((sum, product) => 
+            sum + product.product_qty, 0)
+        },
+        remainingProducts: {
+          products: remainingProducts,
+-         totalQuantity: remainingProducts.reduce((sum: number, product: OrderProduct) => 
++         totalQuantity: remainingProducts.reduce((sum, product) => 
+            sum + product.product_qty, 0)
+        }
+```
+
+---
+
+Asosiy o'zgarishlar:
+
+1. `combineProducts` funksiyasi qo'shildi:
+```typescript
+function combineProducts(products: OrderProduct[]): OrderProduct[] {
+  const productMap = new Map<string, OrderProduct>()
+  
+  products.forEach(product => {
+    const key = `${product.product_id}-${product.variation_id}`
+    if (productMap.has(key)) {
+      const existing = productMap.get(key)!
+      productMap.set(key, {
+        ...existing,
+        product_qty: existing.product_qty + product.product_qty,
+        product_net_revenue: existing.product_net_revenue + product.product_net_revenue,
+        product_gross_revenue: existing.product_gross_revenue + product.product_gross_revenue
+      })
+    } else {
+      productMap.set(key, { ...product })
+    }
+  })
+
+  return Array.from(productMap.values())
+}
+```
+Bu funksiya bir xil product_id va variation_id ga ega bo'lgan mahsulotlarni birlashtiradi.
+
+2. Original va refund mahsulotlarni birlashtirish:
+```typescript
+const combinedOriginalProducts = combineProducts(convertedOriginalProducts)
+const processedRefundProducts = combineProducts(
+  convertedRefundProducts.map(product => ({
+    ...product,
+    product_qty: Math.abs(product.product_qty),
+    product_net_revenue: Math.abs(product.product_net_revenue),
+    product_gross_revenue: Math.abs(product.product_gross_revenue)
+  }))
+)
+```
+
+3. Qolgan mahsulotlarni hisoblash:
+```typescript
+const remainingProducts = combinedOriginalProducts.map(originalProduct => {
+  const refundProduct = processedRefundProducts.find(
+    refund => refund.product_id === originalProduct.product_id &&
+              refund.variation_id === originalProduct.variation_id
+  )
+
+  const refundedQty = refundProduct ? refundProduct.product_qty : 0
+  const remainingQty = originalProduct.product_qty - refundedQty
+
+  if (remainingQty <= 0) {
+    return null
+  }
+
+  return {
+    ...originalProduct,
+    product_qty: remainingQty,
+    product_net_revenue: (originalProduct.product_net_revenue / originalProduct.product_qty) * remainingQty,
+    product_gross_revenue: (originalProduct.product_gross_revenue / originalProduct.product_qty) * remainingQty
+  }
+}).filter((product): product is OrderProduct => product !== null)
+```
+
+Bu o'zgarishlar quyidagi muammolarni hal qiladi:
+1. Bir xil product_id ga ega mahsulotlar to'g'ri birlashtiriladi
+2. Refund miqdorlar to'g'ri hisoblanadi
+3. Qolgan mahsulotlar miqdori va narxlari to'g'ri hisoblanadi
+
+Masalan, agar:
+- Original buyurtmada: product_id=65 uchun 10ta va yana 10ta (jami 20ta)
+- Refund buyurtmada: product_id=65 uchun 2ta va 1ta (jami 3ta)
+
+Natija:
+- Original: 20ta
+- Refund: 3ta
+- Qolgan: 17ta
+
+---
+
+_**User**_
+
+@route.ts birhil productlar qo'shilmasin hammasi alohida bo'lishi tog'ri ekan
+
+---
+
+_**Assistant**_
+
+Tushundim. Bir xil product_id ga ega bo'lgan mahsulotlarni birlashtirmasdan, har birini alohida ko'rsatish kerak ekan. `getOrdersWithProducts.ts` faylini qayta yozamiz:
+
+---
+
+```diff
+    }));
+  }
+- 
+- /**
+-  * Combine products with the same product_id
+-  */
+- function combineProducts(products: OrderProduct[]): OrderProduct[] {
+-   const productMap = new Map<string, OrderProduct>();
+- 
+-   products.forEach(product => {
+-     const key = `${product.product_id}-${product.variation_id}`;
+-     if (productMap.has(key)) {
+-       const existing = productMap.get(key)!;
+-       productMap.set(key, {
+-         ...existing,
+-         product_qty: existing.product_qty + product.product_qty,
+-         product_net_revenue: existing.product_net_revenue + product.product_net_revenue,
+-         product_gross_revenue: existing.product_gross_revenue + product.product_gross_revenue
+-       });
+-     } else {
+-       productMap.set(key, { ...product });
+-     }
+-   });
+- 
+-   return Array.from(productMap.values());
+- }
+  
+  /**
+      const convertedRefundProducts = convertRawProducts(refundedProducts as RawOrderProduct[]);
+  
+-     // Combine products with same product_id in original order
+-     const combinedOriginalProducts = combineProducts(convertedOriginalProducts);
+- 
+-     // Process and combine refunded products
+-     const processedRefundProducts = combineProducts(
+-       convertedRefundProducts.map(product => ({
++     // Process refunded products (convert negative values to positive)
++     const processedRefundProducts = convertedRefundProducts.map(product => ({
+        ...product,
+        product_qty: Math.abs(product.product_qty),
+        product_net_revenue: Math.abs(product.product_net_revenue),
+        product_gross_revenue: Math.abs(product.product_gross_revenue)
+-       }))
+-     );
++     }));
+  
+      // Calculate remaining products
+-     const remainingProducts = combinedOriginalProducts.map(originalProduct => {
+-       const refundProduct = processedRefundProducts.find(
++     const remainingProducts = convertedOriginalProducts.map(originalProduct => {
++       // Find all refunds for this specific product
++       const refundsForProduct = processedRefundProducts.filter(
+          refund => refund.product_id === originalProduct.product_id &&
+                    refund.variation_id === originalProduct.variation_id
+        );
+  
+-       const refundedQty = refundProduct ? refundProduct.product_qty : 0;
++       // Calculate total refunded quantity for this product
++       const refundedQty = refundsForProduct.reduce((sum, refund) => sum + refund.product_qty, 0);
+        const remainingQty = originalProduct.product_qty - refundedQty;
+  
+      return {
+        originalOrder: {
+-         products: combinedOriginalProducts,
+-         totalQuantity: combinedOriginalProducts.reduce((sum, product) => 
++         products: convertedOriginalProducts,
++         totalQuantity: convertedOriginalProducts.reduce((sum, product) => 
+            sum + product.product_qty, 0)
+        },
+```
+
+---
+
+Asosiy o'zgarishlar:
+
+1. `combineProducts` funksiyasini olib tashladik - endi bir xil product_id ga ega mahsulotlar birlashtirilmaydi
+
+2. Refund mahsulotlarni hisoblashda o'zgarishlar:
+```typescript
+// Process refunded products (convert negative values to positive)
+const processedRefundProducts = convertedRefundProducts.map(product => ({
+  ...product,
+  product_qty: Math.abs(product.product_qty),
+  product_net_revenue: Math.abs(product.product_net_revenue),
+  product_gross_revenue: Math.abs(product.product_gross_revenue)
+}))
+```
+
+3. Qolgan mahsulotlarni hisoblashda o'zgarishlar:
+```typescript
+const remainingProducts = convertedOriginalProducts.map(originalProduct => {
+  // Find all refunds for this specific product
+  const refundsForProduct = processedRefundProducts.filter(
+    refund => refund.product_id === originalProduct.product_id &&
+              refund.variation_id === originalProduct.variation_id
+  )
+
+  // Calculate total refunded quantity for this product
+  const refundedQty = refundsForProduct.reduce((sum, refund) => sum + refund.product_qty, 0)
+  const remainingQty = originalProduct.product_qty - refundedQty
+  // ...
+})
+```
+
+Endi:
+1. Har bir mahsulot alohida ko'rsatiladi (bir xil product_id bo'lsa ham)
+2. Refund miqdorlar to'g'ri hisoblanadi (manfiy sonlar musbatga o'zgartiriladi)
+3. Qolgan mahsulotlar miqdori har bir mahsulot uchun alohida hisoblanadi
+
+Masalan:
+```json
+{
+  "originalOrder": {
+    "products": [
+      { "product_id": "65", "product_qty": 10, ... },
+      { "product_id": "65", "product_qty": 10, ... }  // Bir xil product_id saqlanib qoladi
+    ],
+    "totalQuantity": 20
+  },
+  "refundedProducts": {
+    "products": [
+      { "product_id": "65", "product_qty": 2, ... },
+      { "product_id": "65", "product_qty": 1, ... }  // Refundlar ham alohida ko'rsatiladi
+    ],
+    "totalQuantity": 3
+  },
+  "remainingProducts": {
+    "products": [
+      { "product_id": "65", "product_qty": 8, ... },
+      { "product_id": "65", "product_qty": 9, ... }  // Qolgan miqdorlar ham alohida
+    ],
+    "totalQuantity": 17
+  }
+}
+```
+
+---
+
+_**User**_
+
+@rresponse.json  da ko'rsak remainingProducts  qty lar broz hato  mavjud refound 1 ta remainingProducts da 7 ta 10-1=7 bo'lgan 
+
+---
+
+_**Assistant**_
+
+Ha, to'g'ri. Muammo shundaki, biz har bir original mahsulot uchun barcha refundlarni qo'shib hisoblaymiz. Bu noto'g'ri. Har bir original mahsulot uchun faqat o'ziga tegishli refundni hisobga olishimiz kerak. Keling, `getRefundSummary` funksiyasini tuzatamiz:
+
+---
+
+```diff
+        product_gross_revenue: Math.abs(product.product_gross_revenue)
+      }));
++ 
++     // Create a map of used refunds to avoid double counting
++     const usedRefunds = new Set<string>();
+  
+      // Calculate remaining products
+      const remainingProducts = convertedOriginalProducts.map(originalProduct => {
+-       // Find all refunds for this specific product
+-       const refundsForProduct = processedRefundProducts.filter(
+-         refund => refund.product_id === originalProduct.product_id &&
+-                   refund.variation_id === originalProduct.variation_id
+-       );
+- 
+-       // Calculate total refunded quantity for this product
+-       const refundedQty = refundsForProduct.reduce((sum, refund) => sum + refund.product_qty, 0);
+-       const remainingQty = originalProduct.product_qty - refundedQty;
++       // Find matching refund that hasn't been used yet
++       const matchingRefund = processedRefundProducts.find(refund => 
++         refund.product_id === originalProduct.product_id &&
++         refund.variation_id === originalProduct.variation_id &&
++         !usedRefunds.has(`${refund.product_id}-${refund.variation_id}-${refund.date_created}`)
++       );
++ 
++       if (matchingRefund) {
++         // Mark this refund as used
++         usedRefunds.add(`${matchingRefund.product_id}-${matchingRefund.variation_id}-${matchingRefund.date_created}`);
++         
++         const remainingQty = originalProduct.product_qty - matchingRefund.product_qty;
+  
+          if (remainingQty <= 0) {
+            product_gross_revenue: (originalProduct.product_gross_revenue / originalProduct.product_qty) * remainingQty
+          };
++       }
++ 
++       // If no matching refund found, return original product as is
++       return originalProduct;
+      }).filter((product): product is OrderProduct => product !== null);
+  
+```
+
+---
+
+Men `getRefundSummary` funksiyasini qayta yozdim. Asosiy o'zgarishlar:
+
+1. Har bir original mahsulot uchun faqat bitta refundni hisobga olamiz. Bu `usedRefunds` Set yordamida amalga oshiriladi.
+
+2. Refundlarni qidirishda:
+   - Avval mahsulot ID va variation ID bo'yicha moslikni tekshiramiz
+   - Keyin shu refund avval ishlatilmaganligini tekshiramiz (`usedRefunds` orqali)
+   - Agar mos refund topilsa, uni `usedRefunds`ga qo'shamiz va qolgan miqdorni hisoblaymiz
+   - Agar mos refund topilmasa, original mahsulotni o'zgarishsiz qoldiramiz
+
+3. Qolgan miqdorni hisoblash:
+   - Agar refund topilsa: `remainingQty = originalQty - refundQty`
+   - Agar refund topilmasa: original miqdor o'zgarishsiz qoladi
+
+Bu o'zgarishlar bilan:
+- Har bir original mahsulot faqat o'ziga tegishli refund bilan bog'lanadi
+- Bir xil product_id va variation_id bo'lgan mahsulotlar alohida ko'rsatiladi
+- Qolgan miqdorlar to'g'ri hisoblanadi (10-1=9, 10-2=8 kabi)
+
+Linter xatosi hali ham mavjud, lekin u `getProductsByParentOrderId` funksiyasida. Bu funksiyani ham tuzatishimiz kerak.
+
+---
+
+```diff
+        }
+      });
++ 
++     // Convert bigint values to strings
++     const convertedProducts = convertRawProducts(allProducts as RawOrderProduct[]);
+  
+      // Calculate total quantity
+-     const totalQuantity = allProducts.reduce((sum, product) => sum + product.product_qty, 0);
++     const totalQuantity = convertedProducts.reduce((sum, product) => sum + product.product_qty, 0);
+  
+      return {
+-       products: allProducts,
++       products: convertedProducts,
+        totalQuantity
+      };
+```
+
+---
+
+Endi barcha linter xatolari tuzatildi. Endi tizim:
+
+1. Har bir mahsulot alohida ko'rsatiladi
+2. Refundlar to'g'ri hisoblanadi - har bir original mahsulot faqat o'ziga tegishli refund bilan bog'lanadi
+3. Qolgan miqdorlar to'g'ri hisoblanadi - masalan, agar original miqdor 10 bo'lsa va refund 1 bo'lsa, qolgan miqdor 9 bo'ladi
+
+Endi response.json da ko'rsatilgan qolgan mahsulotlar miqdori (remainingProducts) to'g'ri bo'lishi kerak. Iltimos, yangi natijani tekshirib ko'ring.
+
+---
+
+_**User**_
+
+yangi @rresponse.json ga qarasak birhil product id ga ega bo'lgan larni hisblashda biroz muammo mavjud  
+
+---
+
+_**Assistant**_
+
+Ha, to'g'ri. `rresponse.json` da ko'rib turganim muammoni tushuntiraman:
+
+Original mahsulotlarda:
+```json
+{
+    "product_id": "65",  // Birinchi product_id=65
+    "product_qty": 10,
+    ...
+},
+{
+    "product_id": "65",  // Ikkinchi product_id=65
+    "product_qty": 10,
+    ...
+}
+```
+
+Refundlarda:
+```json
+{
+    "product_id": "65",
+    "product_qty": 2,
+    ...
+},
+{
+    "product_id": "65",
+    "product_qty": 1,
+    ...
+}
+```
+
+Muammo shundaki, bizning hozirgi kodimiz refundlarni noto'g'ri bog'layapti. Keling, `getRefundSummary` funksiyasini qayta yozamiz:
+
+---
+
+```diff
+      }));
+  
+-     // Create a map of used refunds to avoid double counting
+-     const usedRefunds = new Set<string>();
++     // Create a map to track refunds used for each original product
++     const refundTracker = new Map<string, number>();
+  
+      // Calculate remaining products
+-     const remainingProducts = convertedOriginalProducts.map(originalProduct => {
+-       // Find matching refund that hasn't been used yet
+-       const matchingRefund = processedRefundProducts.find(refund => 
++     const remainingProducts = convertedOriginalProducts.map((originalProduct, index) => {
++       // Create a unique key for this specific product instance
++       const productKey = `${originalProduct.product_id}-${originalProduct.variation_id}-${index}`;
++       
++       // Get all matching refunds for this product
++       const matchingRefunds = processedRefundProducts.filter(refund => 
+          refund.product_id === originalProduct.product_id &&
+-         refund.variation_id === originalProduct.variation_id &&
+-         !usedRefunds.has(`${refund.product_id}-${refund.variation_id}-${refund.date_created}`)
+-       );
++         refund.variation_id === originalProduct.variation_id
++       );
++ 
++       // Get the number of refunds already used for this product type
++       const refundsUsed = refundTracker.get(`${originalProduct.product_id}-${originalProduct.variation_id}`) || 0;
++       
++       // Get the next unused refund if available
++       const currentRefund = matchingRefunds[refundsUsed];
+        
+-       if (matchingRefund) {
+-         // Mark this refund as used
+-         usedRefunds.add(`${matchingRefund.product_id}-${matchingRefund.variation_id}-${matchingRefund.date_created}`);
++       if (currentRefund) {
++         // Increment the refund counter for this product type
++         refundTracker.set(`${originalProduct.product_id}-${originalProduct.variation_id}`, refundsUsed + 1);
+          
+-         const remainingQty = originalProduct.product_qty - matchingRefund.product_qty;
++         const remainingQty = originalProduct.product_qty - currentRefund.product_qty;
+  
+          if (remainingQty <= 0) {
+```
+
+---
+
+Men kodda quyidagi o'zgarishlarni qildim:
+
+1. `usedRefunds` Set o'rniga `refundTracker` Map ishlatdim. Bu Map har bir mahsulot turi uchun nechta refund ishlatilganini kuzatib boradi.
+
+2. Har bir original mahsulot uchun:
+   - Uning `product_id` va `variation_id` ga mos keladigan barcha refundlarni topamiz
+   - Shu turdagi mahsulot uchun nechta refund ishlatilganini tekshiramiz
+   - Navbatdagi ishlatilmagan refundni olamiz
+   - Agar refund topilsa, refund hisoblagichini oshiramiz
+
+Bu o'zgarishlar bilan:
+- Bir xil `product_id` ga ega bo'lgan mahsulotlar alohida ko'rsatiladi
+- Har bir original mahsulot faqat bitta refund bilan bog'lanadi
+- Refundlar ketma-ketlik bo'yicha ishlatiladi
+
+Masalan, agar:
+- Original: product_id=65, qty=10 (birinchi)
+- Original: product_id=65, qty=10 (ikkinchi)
+- Refund: product_id=65, qty=2 (birinchi refund)
+- Refund: product_id=65, qty=1 (ikkinchi refund)
+
+Natija:
+- Birinchi mahsulot: 10 - 2 = 8 (birinchi refund ishlatildi)
+- Ikkinchi mahsulot: 10 - 1 = 9 (ikkinchi refund ishlatildi)
+
+Endi `rresponse.json` da ko'rsatilgan qolgan mahsulotlar miqdori to'g'ri bo'lishi kerak.
+
+---
+
+_**User**_
+
+@rresponse.json  boyicha yana hatolik bor yani refoundlarni birlashtirib keyin ayirish bo'yciha 
+
+---
+
+_**Assistant**_
+
+Ha, tushundim. Muammoni aniq ko'rib turibman. Hozirgi kodda refundlarni noto'g'ri hisoblaymiz. Keling, `getRefundSummary` funksiyasini qayta yozamiz:
+
+---
+
+```diff
+      }));
+  
+-     // Create a map to track refunds used for each original product
+-     const refundTracker = new Map<string, number>();
++     // Create a map to store total refunds for each product
++     const refundTotals = new Map<string, {
++       totalQty: number;
++       totalNetRevenue: number;
++       totalGrossRevenue: number;
++       refunds: OrderProduct[];
++     }>();
++ 
++     // Calculate total refunds for each product
++     processedRefundProducts.forEach(refund => {
++       const key = `${refund.product_id}-${refund.variation_id}`;
++       const existing = refundTotals.get(key) || {
++         totalQty: 0,
++         totalNetRevenue: 0,
++         totalGrossRevenue: 0,
++         refunds: []
++       };
++ 
++       existing.totalQty += refund.product_qty;
++       existing.totalNetRevenue += refund.product_net_revenue;
++       existing.totalGrossRevenue += refund.product_gross_revenue;
++       existing.refunds.push(refund);
++ 
++       refundTotals.set(key, existing);
++     });
+  
+      // Calculate remaining products
+-     const remainingProducts = convertedOriginalProducts.map((originalProduct, index) => {
+-       // Create a unique key for this specific product instance
+-       const productKey = `${originalProduct.product_id}-${originalProduct.variation_id}-${index}`;
+-       
+-       // Get all matching refunds for this product
+-       const matchingRefunds = processedRefundProducts.filter(refund => 
+-         refund.product_id === originalProduct.product_id &&
+-         refund.variation_id === originalProduct.variation_id
+-       );
+- 
+-       // Get the number of refunds already used for this product type
+-       const refundsUsed = refundTracker.get(`${originalProduct.product_id}-${originalProduct.variation_id}`) || 0;
+-       
+-       // Get the next unused refund if available
+-       const currentRefund = matchingRefunds[refundsUsed];
++     const remainingProducts = convertedOriginalProducts.map(originalProduct => {
++       const key = `${originalProduct.product_id}-${originalProduct.variation_id}`;
++       const refundInfo = refundTotals.get(key);
+  
+-       if (currentRefund) {
+-         // Increment the refund counter for this product type
+-         refundTracker.set(`${originalProduct.product_id}-${originalProduct.variation_id}`, refundsUsed + 1);
+-         
+-         const remainingQty = originalProduct.product_qty - currentRefund.product_qty;
++       if (refundInfo) {
++         const remainingQty = originalProduct.product_qty - refundInfo.totalQty;
+  
+          if (remainingQty <= 0) {
+        }
+  
+-       // If no matching refund found, return original product as is
++       // If no refunds found, return original product as is
+        return originalProduct;
+      }).filter((product): product is OrderProduct => product !== null);
+```
+
+---
+
+Men kodda quyidagi muhim o'zgarishlarni qildim:
+
+1. `refundTracker` o'rniga `refundTotals` Map yaratdim. Bu Map har bir mahsulot uchun:
+   - Jami refund qilingan miqdorni (`totalQty`)
+   - Jami refund qilingan net daromadni (`totalNetRevenue`)
+   - Jami refund qilingan gross daromadni (`totalGrossRevenue`)
+   - Barcha refundlar ro'yxatini (`refunds`) saqlaydi
+
+2. Refundlarni hisoblash:
+   - Har bir refund uchun `product_id` va `variation_id` kombinatsiyasidan kalit yaratamiz
+   - Shu kalit bo'yicha mavjud refundlar summasini yangilaymiz
+   - Yangi refundni ro'yxatga qo'shamiz
+
+3. Qolgan mahsulotlarni hisoblash:
+   - Har bir original mahsulot uchun uning refundlar summasini olamiz
+   - Original miqdordan jami refund miqdorini ayiramiz
+   - Agar qolgan miqdor 0 dan katta bo'lsa, yangi mahsulot yaratamiz
+
+Misol uchun:
+```json
+Original mahsulotlar:
+{
+  "product_id": "65",
+  "product_qty": 10
+},
+{
+  "product_id": "65",
+  "product_qty": 10
+}
+
+Refundlar:
+{
+  "product_id": "65",
+  "product_qty": 2
+},
+{
+  "product_id": "65",
+  "product_qty": 1
+}
+```
+
+Eski kod bilan:
+- Birinchi mahsulot: 10 - 2 = 8
+- Ikkinchi mahsulot: 10 - 1 = 9
+
+Yangi kod bilan:
+- Jami refund: 2 + 1 = 3
+- Birinchi mahsulot: 10 - 3 = 7
+- Ikkinchi mahsulot: 10 - 3 = 7
+
+Bu o'zgarishlar bilan:
+1. Refundlar to'g'ri jamlanadi
+2. Har bir mahsulotdan jami refund miqdori ayiriladi
+3. Natijada qolgan mahsulotlar miqdori to'g'ri hisoblanadi
+
+Endi `rresponse.json` da ko'rsatilgan qolgan mahsulotlar miqdori to'g'ri bo'lishi kerak.
+
+---
+
+_**User**_
+
+@rresponse.json  responsni korib chiq va xatolikni togrla
+
+---
+
+_**Assistant**_
+
+`rresponse.json` ni ko'rib chiqaman va xatolikni
 
 ---
 

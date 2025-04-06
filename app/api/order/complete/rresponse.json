@@ -1,0 +1,190 @@
+{
+    "success": true,
+    "data": {
+        "originalOrder": {
+            "products": [
+                {
+                    "product_id": "66",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 45000,
+                    "product_gross_revenue": 45000,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "64",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "63",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 29000,
+                    "product_gross_revenue": 29000,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                }
+            ],
+            "totalQuantity": 50
+        },
+        "refundedProducts": {
+            "products": [
+                {
+                    "product_id": "66",
+                    "variation_id": "0",
+                    "product_qty": 1,
+                    "product_net_revenue": 4500,
+                    "product_gross_revenue": 4500,
+                    "date_created": "2025-04-06T05:34:57.000Z",
+                    "order_id": "1743917525"
+                },
+                {
+                    "product_id": "64",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:34:57.000Z",
+                    "order_id": "1743917525"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:34:57.000Z",
+                    "order_id": "1743917525"
+                },
+                {
+                    "product_id": "63",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:34:57.000Z",
+                    "order_id": "1743917525"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 1,
+                    "product_net_revenue": 2900,
+                    "product_gross_revenue": 2900,
+                    "date_created": "2025-04-06T05:34:57.000Z",
+                    "order_id": "1743917525"
+                },
+                {
+                    "product_id": "63",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T06:11:28.000Z",
+                    "order_id": "1743917989"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T06:11:28.000Z",
+                    "order_id": "1743917989"
+                },
+                {
+                    "product_id": "64",
+                    "variation_id": "0",
+                    "product_qty": 2,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T06:11:28.000Z",
+                    "order_id": "1743917989"
+                },
+                {
+                    "product_id": "66",
+                    "variation_id": "0",
+                    "product_qty": 1,
+                    "product_net_revenue": 4500,
+                    "product_gross_revenue": 4500,
+                    "date_created": "2025-04-06T06:11:28.000Z",
+                    "order_id": "1743917989"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 1,
+                    "product_net_revenue": 2900,
+                    "product_gross_revenue": 2900,
+                    "date_created": "2025-04-06T06:11:28.000Z",
+                    "order_id": "1743917989"
+                }
+            ],
+            "totalQuantity": 16
+        },
+        "remainingProducts": {
+            "products": [
+                {
+                    "product_id": "66",
+                    "variation_id": "0",
+                    "product_qty": 8,
+                    "product_net_revenue": 36000,
+                    "product_gross_revenue": 36000,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "64",
+                    "variation_id": "0",
+                    "product_qty": 6,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 4,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "63",
+                    "variation_id": "0",
+                    "product_qty": 6,
+                    "product_net_revenue": 0,
+                    "product_gross_revenue": 0,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                },
+                {
+                    "product_id": "65",
+                    "variation_id": "0",
+                    "product_qty": 10,
+                    "product_net_revenue": 29000,
+                    "product_gross_revenue": 29000,
+                    "date_created": "2025-04-06T05:31:31.000Z"
+                }
+            ],
+            "totalQuantity": 34
+        }
+    }
+}
