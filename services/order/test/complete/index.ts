@@ -1,11 +1,12 @@
 import { updateOrderStatus } from './updateOrderStatus';
-import { processOrderItems } from './processOrderItems';
+import { processOrderItems, checkIfRefunded } from './processOrderItems';
 import { recordLostProduct } from './recordLostProduct';
 
 export {
   updateOrderStatus,
   processOrderItems,
   recordLostProduct,
+  checkIfRefunded,
 };
 
 export interface OrderCompletionParams {
@@ -14,8 +15,10 @@ export interface OrderCompletionParams {
 
 export interface OrderItemProcessResult {
   orderItemId: bigint;
-  productId: bigint;
+  productId: bigint | null;
+  name?: string;
   refunded: boolean;
+  isBundle?: boolean;
   error?: string;
 }
 
@@ -33,4 +36,14 @@ export interface RecordLostProductParams {
 export interface UpdateOrderStatusParams {
   tx: any;
   orderId: bigint;
+}
+
+export interface CheckRefundParams {
+  tx: any;
+  orderItemId: bigint;
+}
+
+export interface RefundCheckResult {
+  isRefunded: boolean;
+  refundedQty: number;
 } 
