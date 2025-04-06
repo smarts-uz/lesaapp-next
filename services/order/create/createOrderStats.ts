@@ -33,6 +33,8 @@ export async function createOrderStats({
       parent_id: BigInt(0),
       date_created: new Date(),
       date_created_gmt: new Date(),
+      date_paid: status === 'completed' ? new Date() : null,
+      date_completed: status === 'completed' ? new Date() : null,
       num_items_sold: totalItemsCount,
       total_sales: totalAmount,
       tax_total: 0,
