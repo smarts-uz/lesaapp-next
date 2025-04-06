@@ -4,14 +4,13 @@
 
 _**User**_
 
-items in a bundle should not have price 
+items in a bundle should not have price
 
 ---
 
 _**Assistant**_
 
 Let me search for the relevant code to understand how bundle items are handled.
-
 
 ---
 
@@ -54,7 +53,6 @@ I see that bundle items currently have a price field in the type definitions and
 
 First, I'll update the type definitions:
 
-
 ---
 
 ```diff
@@ -67,9 +65,7 @@ First, I'll update the type definitions:
 
 ---
 
-
 Now I'll update the bundle editor component to remove the price display:
-
 
 ---
 
@@ -97,12 +93,11 @@ _**Assistant**_
 
 I'll modify the bundle editor to show the min/max quantity info directly without a tooltip.
 
-
 ---
 
 ```diff
                     </div>
-  
+
 -                   <TooltipProvider>
 -                     <Tooltip>
 -                       <TooltipTrigger asChild>
@@ -126,11 +121,6 @@ I'll modify the bundle editor to show the min/max quantity info directly without
 
 ---
 
-
-
 ---
 
-
-
 ---
-

@@ -4,14 +4,13 @@
 
 _**User**_
 
-Make sure that items in a bundle have no price 
+Make sure that items in a bundle have no price
 
 ---
 
 _**Assistant**_
 
 Let me search for any price-related code in the bundle customization dialog.
-
 
 ---
 
@@ -54,7 +53,6 @@ I see that bundle items currently have prices. Let me modify the code to remove 
 
 First, I'll update the types:
 
-
 ---
 
 ```diff
@@ -76,38 +74,32 @@ First, I'll update the types:
 
 Now I'll update the bundle customization dialog to remove price displays:
 
-
 ---
-
-
 
 ---
 
 Let me try again with more specific changes:
 
-
-
 ---
 
 ```diff
-  
+
     const calculateTotalPrice = (items: CustomizedBundleItem[]) => {
 -     const totalPrice = product.price * bundleQuantity;
 -     setTotalPrice(totalPrice);
 +     setTotalPrice(product.price * bundleQuantity);
     };
-  
+
 ```
 
 ---
 
 Now I'll update the cart item component to remove price displays from bundle items:
 
-
 ---
 
 ```diff
-  
+
   const calculateItemTotal = (item: CartItem) => {
 -   if (item.type === "bundle" && item.bundleItems) {
 -     const bundleItemsPrice = item.bundleItems.reduce((total, bundleItem) => {
@@ -122,30 +114,28 @@ Now I'll update the cart item component to remove price displays from bundle ite
 -   return item.price * item.quantity
 +   return item.price * item.quantity;
   }
-  
+
 ```
 
 ---
 
 Finally, I'll update the POS client to remove bundle item price calculations:
 
-
-
 ---
 
 ```diff
             return item
           })
-- 
+-
 -         // Recalculate bundle price based on items
 -         const bundleItemsPrice = updatedBundleItems.reduce((total, item) => {
 -           return total + item.price * item.quantity
 -         }, 0)
-- 
+-
 -         // Apply bundle discount (10%)
 -         const bundleDiscount = bundleItemsPrice * 0.1
 -         const adjustedPrice = bundleItemsPrice - bundleDiscount
-  
+
           updatedCart[cartIndex] = {
             ...cartItem,
             bundleItems: updatedBundleItems,
@@ -167,7 +157,4 @@ Now bundle items will only show quantities and options, while the bundle itself 
 
 ---
 
-
-
 ---
-

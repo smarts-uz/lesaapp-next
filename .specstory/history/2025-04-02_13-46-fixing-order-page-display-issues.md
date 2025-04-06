@@ -4,7 +4,7 @@
 
 _**User**_
 
-Fix the order page it's not displaying info 
+Fix the order page it's not displaying info
 
 ---
 
@@ -14,18 +14,17 @@ I'll help you fix the order page that's not displaying information. Let me first
 
 Looking at the code, I notice that the page is using the `use` hook with `params` which is defined as a Promise. This could be causing issues with how the data is being loaded. Let's fix this and make sure the order information is properly displayed.
 
-
 ---
 
 ```diff
   "use client"
-  
+
 - import { useState, useEffect, use } from "react"
 + import { useState, useEffect } from "react"
   import { Button } from "@/components/ui/button"
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
   import React from "react"
-  
+
 - export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
 -   const resolvedParams = use(params)
 + export default function OrderDetailsPage({ params }: { params: { id: string } }) {
@@ -38,11 +37,11 @@ Looking at the code, I notice that the page is using the `use` hook with `params
 +         const data = await fetchOrder(params.id)
           setOrder(data)
         } catch (error) {
-  
+
       loadOrder()
 -   }, [resolvedParams.id])
 +   }, [params.id])
-  
+
     const handleRefundComplete = (refundData: Refund) => {
 ```
 
@@ -50,11 +49,13 @@ Looking at the code, I notice that the page is using the `use` hook with `params
 
 I've fixed the issue with the order page not displaying information. Here are the key changes I made:
 
-1. **Fixed the params handling**: 
+1. **Fixed the params handling**:
+
    - Changed the params type from `Promise<{ id: string }>` to `{ id: string }` to correctly handle the route parameters
    - Removed the `use` hook which was incorrectly trying to resolve a Promise that wasn't actually a Promise
 
 2. **Improved the data loading process**:
+
    - Added `setIsLoading(true)` at the beginning of the `loadOrder` function to ensure the loading state is properly set
    - Updated the dependency array in the useEffect to use `params.id` instead of `resolvedParams.id`
 
@@ -62,6 +63,7 @@ I've fixed the issue with the order page not displaying information. Here are th
    - Removed the `use` import since it's no longer needed
 
 These changes should fix the issue with the order page not displaying information. The page will now:
+
 1. Properly receive the order ID from the URL parameters
 2. Show a loading state while fetching the order data
 3. Display the order details once the data is loaded
@@ -71,7 +73,4 @@ The rest of the functionality remains intact, including the ability to view orde
 
 ---
 
-
-
 ---
-

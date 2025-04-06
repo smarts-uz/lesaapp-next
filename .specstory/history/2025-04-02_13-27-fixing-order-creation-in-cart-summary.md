@@ -4,14 +4,13 @@
 
 _**User**_
 
-@cart-summary.tsx  fix create order it should save all necessary files in correct places 
+@cart-summary.tsx fix create order it should save all necessary files in correct places
 
 ---
 
 _**Assistant**_
 
 I'll help you fix the cart-summary.tsx component to properly handle order creation. First, let's examine the current implementation and understand what needs to be fixed.
-
 
 ---
 
@@ -21,7 +20,6 @@ Read file: components/pos/cart-summary.tsx
 
 Now, let's look at the orders.ts file to understand how orders are created:
 
-
 ---
 
 Read file: lib/prisma/orders.ts
@@ -29,8 +27,6 @@ Read file: lib/prisma/orders.ts
 ---
 
 Let's also check if there are any cart-related files that might be relevant:
-
-
 
 ---
 
@@ -71,8 +67,6 @@ Let's also check if there are any cart-related files that might be relevant:
 
 Let's also check the order confirmation dialog to understand how orders are displayed after creation:
 
-
-
 ---
 
 Read file: components/pos/pos-order-confirmation-dialog.tsx
@@ -81,9 +75,6 @@ Read file: components/pos/pos-order-confirmation-dialog.tsx
 
 Now, let's check the WooCommerce integration to understand how orders are created:
 
-
-
-
 ---
 
 Read file: lib/woocommerce.ts
@@ -91,9 +82,6 @@ Read file: lib/woocommerce.ts
 ---
 
 Let's check the server actions to understand how orders are created:
-
-
-
 
 ---
 
@@ -105,7 +93,6 @@ Based on my analysis, I can see that the cart-summary.tsx component is missing t
 
 Let's fix the cart-summary.tsx component to properly handle order creation:
 
-
 ---
 
 ```diff
@@ -113,20 +100,20 @@ Let's fix the cart-summary.tsx component to properly handle order creation:
   import { formatCurrency } from "@/lib/utils"
 + import { useState } from "react"
 + import { toast } from "@/components/ui/use-toast"
-  
+
   interface CartSummaryProps {
     subtotal: number
     onCheckout: () => void
 +   isLoading?: boolean
   }
-  
+
 - export function CartSummary({ subtotal, onCheckout }: CartSummaryProps) {
 + export function CartSummary({ subtotal, onCheckout, isLoading = false }: CartSummaryProps) {
 +   const [isProcessing, setIsProcessing] = useState(false)
-+ 
++
 +   const handleCheckout = async () => {
 +     if (isProcessing) return
-+     
++
 +     setIsProcessing(true)
 +     try {
 +       await onCheckout()
@@ -141,14 +128,14 @@ Let's fix the cart-summary.tsx component to properly handle order creation:
 +       setIsProcessing(false)
 +     }
 +   }
-+ 
++
     return (
       <div className="p-4 border-t">
         </div>
-        
+
 -       <Button onClick={onCheckout} className="w-full">
-+       <Button 
-+         onClick={handleCheckout} 
++       <Button
++         onClick={handleCheckout}
 +         className="w-full"
 +         disabled={isLoading || isProcessing || subtotal <= 0}
 +       >
@@ -163,8 +150,6 @@ Let's fix the cart-summary.tsx component to properly handle order creation:
 
 Now, let's update the POSCartSection component to properly pass the loading state to the CartSummary component:
 
-
-
 ---
 
 Read file: components/pos/pos-cart-section.tsx
@@ -173,9 +158,6 @@ Read file: components/pos/pos-cart-section.tsx
 
 Now, let's update the POSCartSection component to include the loading state:
 
-
-
-
 ---
 
 ```diff
@@ -183,7 +165,7 @@ Now, let's update the POSCartSection component to include the loading state:
     onCheckout: () => void;
 +   isLoading?: boolean;
   }
-  
+
     editingBundleInCart,
     subtotal,
 -   onCheckout
@@ -202,25 +184,23 @@ Now, let's update the POSCartSection component to include the loading state:
 
 Now, let's update the POSClient component to properly handle the loading state during checkout:
 
-
-
 ---
 
 ```diff
     const [orderComplete, setOrderComplete] = useState(false);
     const [orderDetails, setOrderDetails] = useState<any>(null);
 +   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-  
+
     // Sort cart to prioritize bundles at the top
       if (cart.length === 0) return;
-  
+
 +     setIsCheckoutLoading(true);
-+ 
++
 +     try {
         // Calculate totals
         const subtotal = calculateTotal();
         };
-  
+
 -     try {
         // Create order in database
         const order = await createOrder(orderData);
@@ -241,9 +221,6 @@ Now, let's update the POSClient component to properly handle the loading state d
 
 Now, let's update the WooCommerce integration to properly handle order creation:
 
-
-
-
 ---
 
 ```diff
@@ -252,12 +229,12 @@ Now, let's update the WooCommerce integration to properly handle order creation:
 -     // Use server action instead of direct Prisma call
 +     // Use the server action to create the order
       const result = await createOrderAction(orderData);
-      
+
       if (!result.success) {
 -       throw new Error(result.error || "Failed to create order");
 +       throw new Error(result.error || 'Failed to create order');
       }
-      
+
       return result.order;
     } catch (error) {
 -     console.error("Error creating order:", error);
@@ -270,17 +247,13 @@ Now, let's update the WooCommerce integration to properly handle order creation:
 
 Let's also update the server action to properly handle order creation:
 
-
-
-
-
 ---
 
 ```diff
-  
+
   import { createOrder as createOrderPrisma } from './prisma/orders';
 + import { z } from 'zod';
-+ 
++
 + // Define a schema for order validation
 + const OrderItemSchema = z.object({
 +   product_id: z.number(),
@@ -293,7 +266,7 @@ Let's also update the server action to properly handle order creation:
 +   bundleItems: z.array(z.any()).optional().default([]),
 +   tax_amount: z.number().optional(),
 + });
-+ 
++
 + const OrderSchema = z.object({
 +   items: z.array(OrderItemSchema),
 +   subtotal: z.number(),
@@ -305,27 +278,27 @@ Let's also update the server action to properly handle order creation:
 +   billing: z.any().optional(),
 +   shipping: z.any().optional(),
 + });
-  
+
   export async function createOrderAction(orderData: any) {
     try {
 -     const order = await createOrderPrisma(orderData);
 +     // Validate order data
 +     const validatedData = OrderSchema.parse(orderData);
-+     
++
 +     // Create order in database
 +     const order = await createOrderPrisma(validatedData);
-+     
++
       return { success: true, order };
     } catch (error) {
       console.error('Error creating order:', error);
-+     
++
 +     if (error instanceof z.ZodError) {
-+       return { 
-+         success: false, 
-+         error: `Validation error: ${error.errors.map(e => e.message).join(', ')}` 
++       return {
++         success: false,
++         error: `Validation error: ${error.errors.map(e => e.message).join(', ')}`
 +       };
 +     }
-+     
++
       return { success: false, error: (error as Error).message };
     }
 ```
@@ -334,18 +307,13 @@ Let's also update the server action to properly handle order creation:
 
 Great! Now let's make sure the order confirmation dialog properly displays the order details:
 
-
-
-
-
-
 ---
 
 ```diff
     DialogTitle,
   } from "@/components/ui/dialog";
 + import { Package } from "lucide-react";
-+ 
++
 + interface OrderItem {
 +   name: string;
 +   quantity: number;
@@ -354,7 +322,7 @@ Great! Now let's make sure the order confirmation dialog properly displays the o
 +   type?: string;
 +   bundleItems?: any[];
 + }
-+ 
++
 + interface OrderDetails {
 +   id: string;
 +   number: string;
@@ -366,14 +334,14 @@ Great! Now let's make sure the order confirmation dialog properly displays the o
 +   tax_total: number;
 +   total: number;
 + }
-  
+
   interface POSOrderConfirmationDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 -   orderDetails: any;
 +   orderDetails: OrderDetails | null;
   }
-  
+
         <DialogContent className="max-w-md">
           <DialogHeader>
 -           <DialogTitle>Order #{orderDetails.id} Created</DialogTitle>
@@ -416,24 +384,29 @@ Great! Now let's make sure the order confirmation dialog properly displays the o
 Perfect! Now let's summarize the changes we've made to fix the cart-summary.tsx component and ensure orders are properly saved:
 
 1. **CartSummary Component**:
+
    - Added loading state handling
    - Improved error handling with toast notifications
    - Added proper button state management (disabled when loading or empty cart)
 
 2. **POSCartSection Component**:
+
    - Added isLoading prop to pass loading state to CartSummary
    - Properly integrated with the parent component
 
 3. **POSClient Component**:
+
    - Added isCheckoutLoading state to track checkout process
    - Improved error handling in the handleCheckout function
    - Properly passed loading state to POSCartSection
 
 4. **WooCommerce Integration**:
+
    - Updated createOrder function to use the server action
    - Improved error handling
 
 5. **Server Actions**:
+
    - Added Zod validation for order data
    - Improved error handling with specific error messages for validation failures
 
@@ -443,6 +416,7 @@ Perfect! Now let's summarize the changes we've made to fix the cart-summary.tsx 
    - Added visual indicators for bundle items
 
 These changes ensure that:
+
 1. Orders are properly validated before being saved
 2. The UI provides appropriate feedback during the checkout process
 3. Error handling is improved throughout the flow
@@ -454,7 +428,7 @@ The cart-summary.tsx component now properly integrates with the order creation p
 
 _**User**_
 
-it's not saving orders to wc-order-bundle look up fix that 
+it's not saving orders to wc-order-bundle look up fix that
 
 ---
 
@@ -466,7 +440,6 @@ Looking at the code, I can see that the issue is in the createOrder function in 
 
 Let's fix this by updating the createOrder function in lib/prisma/orders.ts:
 
-
 ---
 
 ```diff
@@ -474,11 +447,11 @@ Let's fix this by updating the createOrder function in lib/prisma/orders.ts:
               for (const bundleItem of item.bundleItems) {
 +               // Skip bundle items with zero quantity
 +               if (bundleItem.quantity <= 0) continue;
-+               
++
                 const bundleOrderItem = await tx.wp_woocommerce_order_items.create({
                   data: {
                 });
-                
+
 -               // Save to the wp_wc_order_bundle_lookup table using raw SQL
 -               try {
 +               // Save to the wp_wc_order_bundle_lookup table
@@ -486,31 +459,31 @@ Let's fix this by updating the createOrder function in lib/prisma/orders.ts:
 +                 // First check if the table exists
 +                 const tableExists = await tx.$queryRaw`
 +                   SELECT EXISTS (
-+                     SELECT FROM information_schema.tables 
++                     SELECT FROM information_schema.tables
 +                     WHERE table_name = 'wp_wc_order_bundle_lookup'
 +                   );
 +                 `;
-+                 
++
 +                 if (tableExists && tableExists[0]?.exists) {
 +                   // Table exists, insert the data
 +                   await tx.$executeRaw`
 +                     INSERT INTO wp_wc_order_bundle_lookup (
-+                       order_id, 
-+                       order_item_id, 
-+                       bundle_id, 
-+                       bundled_order_item_id, 
-+                       product_id, 
-+                       variation_id, 
-+                       quantity, 
++                       order_id,
++                       order_item_id,
++                       bundle_id,
++                       bundled_order_item_id,
++                       product_id,
++                       variation_id,
++                       quantity,
 +                       date_created
 +                     ) VALUES (
-+                       ${order.id}, 
-+                       ${orderItem.order_item_id}, 
-+                       ${BigInt(item.id || 0)}, 
-+                       ${bundleOrderItem.order_item_id}, 
-+                       ${BigInt(bundleItem.product_id || 0)}, 
-+                       ${BigInt(bundleItem.variation_id || 0)}, 
-+                       ${bundleItem.quantity || 0}, 
++                       ${order.id},
++                       ${orderItem.order_item_id},
++                       ${BigInt(item.id || 0)},
++                       ${bundleOrderItem.order_item_id},
++                       ${BigInt(bundleItem.product_id || 0)},
++                       ${BigInt(bundleItem.variation_id || 0)},
++                       ${bundleItem.quantity || 0},
 +                       ${new Date()}
 +                     )
 +                   `;
@@ -534,7 +507,7 @@ Let's fix this by updating the createOrder function in lib/prisma/orders.ts:
 +                       KEY product_id (product_id)
 +                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 +                   `;
-+                   
++
 +                   // Now insert the data
                     await tx.$executeRaw`
                       INSERT INTO wp_wc_order_bundle_lookup (
@@ -549,12 +522,11 @@ Let's fix this by updating the createOrder function in lib/prisma/orders.ts:
 
 Now let's also update the server action to ensure it properly handles the order creation process:
 
-
 ---
 
 ```diff
       const validatedData = OrderSchema.parse(orderData);
-      
+
 -     // Create order in database
 -     const order = await createOrderPrisma(validatedData);
 +     // Process bundle items to ensure they have the correct structure
@@ -571,7 +543,7 @@ Now let's also update the server action to ensure it properly handles the order 
 +           variation_id: bundleItem.variation_id || 0,
 +           ...bundleItem
 +         }));
-+         
++
 +         return {
 +           ...item,
 +           bundleItems: processedBundleItems
@@ -579,21 +551,19 @@ Now let's also update the server action to ensure it properly handles the order 
 +       }
 +       return item;
 +     });
-+     
++
 +     // Create order in database with processed items
 +     const order = await createOrderPrisma({
 +       ...validatedData,
 +       items: processedItems
 +     });
-      
+
       return { success: true, order };
 ```
 
 ---
 
 Now let's update the WooCommerce integration to ensure it properly handles bundle items when creating orders:
-
-
 
 ---
 
@@ -614,7 +584,7 @@ Now let's update the WooCommerce integration to ensure it properly handles bundl
 +           variation_id: bundleItem.variation_id || 0,
 +           ...bundleItem
 +         }));
-+         
++
 +         return {
 +           ...item,
 +           bundleItems: processedBundleItems
@@ -622,14 +592,14 @@ Now let's update the WooCommerce integration to ensure it properly handles bundl
 +       }
 +       return item;
 +     });
-+     
++
       // Use the server action to create the order
 -     const result = await createOrderAction(orderData);
 +     const result = await createOrderAction({
 +       ...orderData,
 +       items: processedItems
 +     });
-      
+
       if (!result.success) {
 ```
 
@@ -637,13 +607,11 @@ Now let's update the WooCommerce integration to ensure it properly handles bundl
 
 Finally, let's update the POSClient component to ensure it properly formats bundle items before sending them to the order creation process:
 
-
-
 ---
 
 ```diff
         const total = subtotal + taxAmount;
-  
+
 -       // Prepare order data
 +       // Prepare order data with properly formatted bundle items
         const orderData = {
@@ -659,12 +627,12 @@ Finally, let's update the POSClient component to ensure it properly formats bund
               tax_amount: item.price * item.quantity * 0.1,
 -         })),
 +           };
-+           
++
 +           // If this is a bundle, add the bundle items
 +           if (item.type === "bundle" && item.bundleItems) {
 +             // Filter out bundle items with zero quantity
 +             const activeBundleItems = item.bundleItems.filter(bi => bi.quantity > 0);
-+             
++
 +             return {
 +               ...itemData,
 +               bundleItems: activeBundleItems.map(bundleItem => ({
@@ -679,7 +647,7 @@ Finally, let's update the POSClient component to ensure it properly formats bund
 +               }))
 +             };
 +           }
-+           
++
 +           return itemData;
 +         }),
           subtotal,
@@ -691,17 +659,20 @@ Finally, let's update the POSClient component to ensure it properly formats bund
 I've made several important changes to fix the issue with orders not being saved to the wp_wc_order_bundle_lookup table:
 
 1. **In lib/prisma/orders.ts**:
+
    - Added a check to skip bundle items with zero quantity
    - Added a check to verify if the wp_wc_order_bundle_lookup table exists
    - If the table doesn't exist, it now creates it with the proper schema
    - Improved the SQL query to properly insert bundle items into the lookup table
 
 2. **In lib/actions.ts**:
+
    - Added processing for bundle items to ensure they have the correct structure
    - Each bundle item now has all required fields (id, product_id, name, price, quantity, etc.)
    - This ensures that the data passed to the createOrder function is properly formatted
 
 3. **In lib/woocommerce.ts**:
+
    - Added similar processing for bundle items to ensure they have the correct structure
    - This provides an additional layer of validation before the data reaches the server action
 
@@ -711,6 +682,7 @@ I've made several important changes to fix the issue with orders not being saved
    - Ensured all required fields are present for each bundle item
 
 These changes ensure that:
+
 1. Bundle items are properly formatted at every step of the order creation process
 2. The wp_wc_order_bundle_lookup table is created if it doesn't exist
 3. Bundle items are correctly inserted into the lookup table
@@ -738,7 +710,6 @@ Let's fix these issues one by one:
 
 First, let's fix the TypeScript error in the orders.ts file:
 
-
 ---
 
 ```diff
@@ -747,31 +718,31 @@ First, let's fix the TypeScript error in the orders.ts file:
 -                 // First check if the table exists
 -                 const tableExists = await tx.$queryRaw`
 -                   SELECT EXISTS (
--                     SELECT FROM information_schema.tables 
+-                     SELECT FROM information_schema.tables
 -                     WHERE table_name = 'wp_wc_order_bundle_lookup'
 -                   );
 -                 `;
--                 
+-
 -                 if (tableExists && tableExists[0]?.exists) {
 -                   // Table exists, insert the data
 -                   await tx.$executeRaw`
 -                     INSERT INTO wp_wc_order_bundle_lookup (
--                       order_id, 
--                       order_item_id, 
--                       bundle_id, 
--                       bundled_order_item_id, 
--                       product_id, 
--                       variation_id, 
--                       quantity, 
+-                       order_id,
+-                       order_item_id,
+-                       bundle_id,
+-                       bundled_order_item_id,
+-                       product_id,
+-                       variation_id,
+-                       quantity,
 -                       date_created
 -                     ) VALUES (
--                       ${order.id}, 
--                       ${orderItem.order_item_id}, 
--                       ${BigInt(item.id || 0)}, 
--                       ${bundleOrderItem.order_item_id}, 
--                       ${BigInt(bundleItem.product_id || 0)}, 
--                       ${BigInt(bundleItem.variation_id || 0)}, 
--                       ${bundleItem.quantity || 0}, 
+-                       ${order.id},
+-                       ${orderItem.order_item_id},
+-                       ${BigInt(item.id || 0)},
+-                       ${bundleOrderItem.order_item_id},
+-                       ${BigInt(bundleItem.product_id || 0)},
+-                       ${BigInt(bundleItem.variation_id || 0)},
+-                       ${bundleItem.quantity || 0},
 -                       ${new Date()}
 -                     )
 -                   `;
@@ -783,7 +754,7 @@ First, let's fix the TypeScript error in the orders.ts file:
                     )
                   `;
 -                 }
-+                 
++
 +                 console.log('Successfully inserted bundle lookup data for order:', order.id);
                 } catch (error) {
                   console.error('Error inserting bundle lookup data:', error);
@@ -792,8 +763,6 @@ First, let's fix the TypeScript error in the orders.ts file:
 ---
 
 Now let's fix the property name issues in the POS client component:
-
-
 
 ---
 
@@ -816,9 +785,6 @@ Now let's fix the property name issues in the POS client component:
 
 Now let's update the server action to ensure it properly handles the bundle items:
 
-
-
-
 ---
 
 ```diff
@@ -833,9 +799,6 @@ Now let's update the server action to ensure it properly handles the bundle item
 ---
 
 Finally, let's update the WooCommerce integration to ensure it properly handles bundle items:
-
-
-
 
 ---
 
@@ -853,16 +816,19 @@ Finally, let's update the WooCommerce integration to ensure it properly handles 
 I've made several important fixes to ensure that orders are properly saved to the wp_wc_order_bundle_lookup table:
 
 1. **Fixed the TypeScript error in lib/prisma/orders.ts**:
+
    - Removed the problematic table existence check that was causing TypeScript errors
    - Simplified the approach by always using `CREATE TABLE IF NOT EXISTS` to ensure the table exists
    - Added a success log message to confirm when bundle data is inserted
 
 2. **Fixed property name issues in components/pos/pos-client.tsx**:
+
    - Updated the property names to match what's expected in the database
    - Changed `product_id` to use `productId` from the bundle item
    - Set a default value of 0 for `variation_id` since it's not available in the current data structure
 
 3. **Updated the server action in lib/actions.ts**:
+
    - Added support for both `product_id` and `productId` properties to handle different data structures
    - This ensures that regardless of which property name is used, the data will be properly processed
 
@@ -870,6 +836,7 @@ I've made several important fixes to ensure that orders are properly saved to th
    - Added similar support for both property names to ensure consistency throughout the application
 
 These changes ensure that:
+
 1. The wp_wc_order_bundle_lookup table is always created if it doesn't exist
 2. Bundle items are properly formatted with the correct property names
 3. The data is correctly inserted into the lookup table
@@ -891,18 +858,12 @@ I see the issue now. Let's fix the code to properly save data to the wp_wc_order
 
 Let's make a more direct fix to the orders.ts file:
 
-
 ---
 
 Cancelled
 
 ---
 
-
-
 ---
 
-
-
 ---
-

@@ -26,30 +26,35 @@ A modern Point of Sale (POS) system built with Next.js and Prisma, designed for 
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - MySQL database
 - WooCommerce installation
 
 ## 🔧 Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/lesaapp-next.git
 cd lesaapp-next
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env
 ```
+
 Edit `.env` with your database credentials and other configuration.
 
 4. Initialize Prisma and sync database:
+
 ```bash
 # Pull existing database schema and generate client
 npm run db
@@ -59,6 +64,7 @@ npm run studio
 ```
 
 5. Run the development server:
+
 ```bash
 npm run dev
 ```
@@ -80,6 +86,7 @@ npm run studio
 When the WooCommerce database changes:
 
 1. Sync the database:
+
 ```bash
 npm run db
 ```

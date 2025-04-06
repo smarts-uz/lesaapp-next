@@ -10,8 +10,17 @@ interface POSCartSectionProps {
   onRemove: (index: number) => void;
   onToggleBundleItems: (index: number) => void;
   onToggleBundleEditor: (index: number) => void;
-  onUpdateBundleItemQuantity: (cartIndex: number, bundleItemId: number, newQuantity: number) => void;
-  onUpdateBundleItemOption: (cartIndex: number, bundleItemId: number, optionName: string, optionValue: string) => void;
+  onUpdateBundleItemQuantity: (
+    cartIndex: number,
+    bundleItemId: number,
+    newQuantity: number,
+  ) => void;
+  onUpdateBundleItemOption: (
+    cartIndex: number,
+    bundleItemId: number,
+    optionName: string,
+    optionValue: string,
+  ) => void;
   onCloseBundleEditor: () => void;
   expandedBundleItems: Record<string, boolean>;
   editingBundleInCart: { index: number; open: boolean };
@@ -33,7 +42,7 @@ export function POSCartSection({
   editingBundleInCart,
   subtotal,
   onCheckout,
-  isLoading = false
+  isLoading = false,
 }: POSCartSectionProps) {
   return (
     <div className="w-1/3 h-full flex flex-col border rounded-lg bg-background">
@@ -87,4 +96,4 @@ export function POSCartSection({
       )}
     </div>
   );
-} 
+}

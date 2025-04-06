@@ -14,7 +14,6 @@ I'll help break down the `POSClient` component into smaller, more manageable com
 
 First, I'll search for the file to confirm its location.
 
-
 ---
 
 <details>
@@ -56,26 +55,25 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 
 1. First, let's create a new component for the product grid:
 
-
 ---
 
 ```diff
-- 
+-
 + "use client"
-+ 
++
 + import { Card, CardContent } from "@/components/ui/card"
 + import { Badge } from "@/components/ui/badge"
 + import { Package } from "lucide-react"
 + import Image from "next/image"
 + import type { Product } from "@/types/pos"
 + import { formatCurrency } from "@/lib/utils"
-+ 
++
 + interface ProductGridProps {
 +   products: Product[]
 +   isLoading: boolean
 +   onAddToCart: (product: Product) => void
 + }
-+ 
++
 + export function ProductGrid({ products, isLoading, onAddToCart }: ProductGridProps) {
 +   if (isLoading) {
 +     return (
@@ -94,7 +92,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +       </div>
 +     )
 +   }
-+ 
++
 +   return (
 +     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 +       {products.map((product) => (
@@ -133,20 +131,19 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +       ))}
 +     </div>
 +   )
-+ } 
++ }
 ```
 
 ---
 
 2. Now, let's create a component for the cart item:
 
-
 ---
 
 ```diff
-- 
+-
 + "use client"
-+ 
++
 + import { Button } from "@/components/ui/button"
 + import { Separator } from "@/components/ui/separator"
 + import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
@@ -155,7 +152,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 + import type { CartItem } from "@/types/pos"
 + import { formatCurrency } from "@/lib/utils"
 + import { InCartBundleEditor } from "./in-cart-bundle-editor"
-+ 
++
 + interface CartItemProps {
 +   item: CartItem
 +   index: number
@@ -169,7 +166,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +   isExpanded: boolean
 +   isEditing: boolean
 + }
-+ 
++
 + export function CartItem({
 +   item,
 +   index,
@@ -259,7 +256,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +           </Button>
 +         </div>
 +       </div>
-+ 
++
 +       {item.type === "bundle" && item.bundleItems && item.bundleItems.length > 0 && (
 +         <Collapsible open={isExpanded}>
 +           <CollapsibleContent>
@@ -288,7 +285,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +           </CollapsibleContent>
 +         </Collapsible>
 +       )}
-+ 
++
 +       {item.type === "bundle" && isEditing && (
 +         <InCartBundleEditor
 +           bundle={item}
@@ -301,39 +298,37 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +           onClose={onCloseBundleEditor}
 +         />
 +       )}
-+ 
++
 +       <Separator />
 +     </div>
 +   )
-+ } 
++ }
 ```
 
 ---
 
 3. Let's create a component for the cart summary:
 
-
-
 ---
 
 ```diff
-- 
+-
 + "use client"
-+ 
++
 + import { Button } from "@/components/ui/button"
 + import { Separator } from "@/components/ui/separator"
 + import { CreditCard, Banknote, Tag } from "lucide-react"
 + import { formatCurrency } from "@/lib/utils"
-+ 
++
 + interface CartSummaryProps {
 +   subtotal: number
 +   onCheckout: () => void
 + }
-+ 
++
 + export function CartSummary({ subtotal, onCheckout }: CartSummaryProps) {
 +   const tax = subtotal * 0.1
 +   const total = subtotal + tax
-+ 
++
 +   return (
 +     <div className="p-4 border-t">
 +       <div className="space-y-2 mb-4">
@@ -351,14 +346,14 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +           <span>{formatCurrency(total)}</span>
 +         </div>
 +       </div>
-+ 
++
 +       <div className="grid grid-cols-2 gap-2 mb-2">
 +         <Button variant="outline" className="w-full">
 +           <Tag className="mr-2 h-4 w-4" />
 +           Discount
 +         </Button>
 +       </div>
-+ 
++
 +       <div className="grid grid-cols-2 gap-2">
 +         <Button variant="outline" className="w-full">
 +           <Banknote className="mr-2 h-4 w-4" />
@@ -371,13 +366,12 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +       </div>
 +     </div>
 +   )
-+ } 
++ }
 ```
 
 ---
 
 4. Now, let's update the main POSClient component to use these new components:
-
 
 ---
 
@@ -418,21 +412,21 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 + import { ProductGrid } from "@/components/pos/product-grid"
 + import { CartItem as CartItemComponent } from "@/components/pos/cart-item"
 + import { CartSummary } from "@/components/pos/cart-summary"
-  
+
   interface POSClientProps {
       }
     }
-- 
+-
 -   const calculateItemTotal = (item: CartItem) => {
 -     return item.price * item.quantity
 -   }
-  
+
     const calculateTotal = () => {
 -     return cart.reduce((total, item) => total + calculateItemTotal(item), 0)
 +     return cart.reduce((total, item) => total + item.price * item.quantity, 0)
     }
-  
-  
+
+
               <TabsContent value={activeCategory} className="flex-1 mt-0">
 -               {isLoading ? (
 -                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full">
@@ -485,7 +479,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 -                         </CardContent>
 -                       </Card>
 -                     ))}
-- 
+-
 -                     {filteredProducts.length === 0 && (
 -                       <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
 -                         <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
@@ -582,7 +576,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 -                           </Button>
 -                         </div>
 -                       </div>
-- 
+-
 -                       {/* Bundle items details - collapsible */}
 -                       {item.type === "bundle" && item.bundleItems && item.bundleItems.length > 0 && (
 -                         <Collapsible open={expandedBundleItems[index]}>
@@ -612,7 +606,7 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 -                           </CollapsibleContent>
 -                         </Collapsible>
 -                       )}
-- 
+-
 -                       {/* In-cart bundle editor */}
 -                       {item.type === "bundle" && editingBundleInCart.index === index && editingBundleInCart.open && (
 -                         <InCartBundleEditor
@@ -639,13 +633,13 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 +                       isEditing={editingBundleInCart.index === index && editingBundleInCart.open}
                       />
 -                       )}
-- 
+-
 -                       <Separator />
 -                     </div>
                     ))}
                   </div>
                 </ScrollArea>
-  
+
 -               <div className="p-4 border-t">
 -                 <div className="space-y-2 mb-4">
 -                   <div className="flex justify-between">
@@ -662,14 +656,14 @@ Based on the code analysis, I'll help break down the `POSClient` component into 
 -                     <span>{formatCurrency(calculateTotal() * 1.1)}</span>
 -                   </div>
 -                 </div>
-- 
+-
 -                 <div className="grid grid-cols-2 gap-2 mb-2">
 -                   <Button variant="outline" className="w-full">
 -                     <Tag className="mr-2 h-4 w-4" />
 -                     Discount
 -                   </Button>
 -                 </div>
-- 
+-
 -                 <div className="grid grid-cols-2 gap-2">
 -                   <Button variant="outline" className="w-full">
 -                     <Banknote className="mr-2 h-4 w-4" />
@@ -703,6 +697,7 @@ The main benefits of this refactoring are:
 5. Reduced complexity in the main component
 
 The main `POSClient` component now focuses on:
+
 - State management
 - Data flow
 - Business logic
@@ -716,7 +711,7 @@ Would you like me to make any additional improvements to the refactored componen
 
 _**User**_
 
-@pos-client.tsx  @pos @pos  items are not being fetch stuck at skeleton
+@pos-client.tsx @pos @pos items are not being fetch stuck at skeleton
 
 ---
 
@@ -726,20 +721,19 @@ I notice that the `isLoading` state in `POSClient` is set to `true` initially bu
 
 I'll update the `POSClient` component:
 
-
 ---
 
 ```diff
       open: false,
     })
-+ 
++
 +   // Set loading to false when products are available
 +   useEffect(() => {
 +     if (products.length > 0) {
 +       setIsLoading(false)
 +     }
 +   }, [products])
-  
+
     // Sort cart to prioritize bundles at the top
 ```
 
@@ -748,6 +742,7 @@ I'll update the `POSClient` component:
 I've added a `useEffect` hook that will set `isLoading` to `false` when products are available. This should fix the issue where the skeleton loading state is stuck.
 
 The loading state will now:
+
 1. Start as `true` (showing skeleton)
 2. Update to `false` once products are loaded
 3. Show the actual product grid
@@ -756,7 +751,4 @@ Let me know if you're still experiencing any issues with the loading state.
 
 ---
 
-
-
 ---
-

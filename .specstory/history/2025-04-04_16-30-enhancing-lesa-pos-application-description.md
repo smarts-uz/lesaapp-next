@@ -22,12 +22,13 @@ Let me update the description in `app/layout.tsx`:
 -   description: "Lesa POS",
 +   description: "Modern point-of-sale system for efficient business management. Streamline sales, inventory, and customer relationships with our intuitive POS solution.",
   }
-  
+
 ```
 
 ---
 
 I've updated the description to be more comprehensive and informative. The new description:
+
 1. Clearly states what the application is (a point-of-sale system)
 2. Highlights key features (sales, inventory, customer relationships)
 3. Emphasizes the modern and intuitive nature of the solution
@@ -37,7 +38,4 @@ This description will be more helpful for both users and search engines to under
 
 ---
 
-
-
 ---
-

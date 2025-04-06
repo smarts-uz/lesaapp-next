@@ -4,7 +4,7 @@
 
 _**User**_
 
-The fetching is incorrect keep in mind I use the same db structure as woocommerce 
+The fetching is incorrect keep in mind I use the same db structure as woocommerce
 
 ---
 
@@ -13,7 +13,6 @@ _**Assistant**_
 I'll help you fix the database query issue. It looks like you're trying to fetch order data from a WooCommerce database structure, but the table names in your query don't match the actual database schema.
 
 Let me first check the database structure to understand what tables are available.
-
 
 ---
 
@@ -55,7 +54,7 @@ Environment variables loaded from .env
 Datasource "db": MySQL database "lesa_prod" at "45.150.24.108:23306"
 
 ✔ Introspected 54 models and wrote them into prisma\schema.prisma in 384ms
-      
+
 Run prisma generate to generate Prisma Client.
 
 PS R:\Projects\smarts\lesaapp-next>
@@ -65,8 +64,6 @@ PS R:\Projects\smarts\lesaapp-next>
 
 Now let's look at the Prisma schema to understand the correct table names:
 
-
-
 ---
 
 Read file: prisma/schema.prisma
@@ -74,8 +71,6 @@ Read file: prisma/schema.prisma
 ---
 
 Let's look at the specific WooCommerce order-related tables to understand the correct structure:
-
-
 
 ---
 
@@ -101,8 +96,6 @@ Read file: prisma/schema.prisma
 
 Now I understand the issue. The error is occurring because you're trying to query tables that don't exist in your database. Let me fix the route.ts file to use the correct table names based on the WooCommerce database structure:
 
-
-
 ---
 
 ```diff
@@ -112,7 +105,7 @@ Now I understand the issue. The error is occurring because you're trying to quer
 -       FROM wp_wc_order_items i
 -       LEFT JOIN wp_wc_order_bundle_items bi ON i.id = bi.order_item_id
 -       WHERE i.order_id = ${parseInt(orderId)}
-+       SELECT 
++       SELECT
 +         oi.order_item_id as id,
 +         oi.order_item_name as name,
 +         oim_sku.meta_value as sku,
@@ -139,14 +132,14 @@ Now I understand the issue. The error is occurring because you're trying to quer
 +       LEFT JOIN wp_woocommerce_bundled_itemmeta bi_meta_options ON bi.bundled_item_id = bi_meta_options.bundled_item_id AND bi_meta_options.meta_key = '_selected_options'
 +       WHERE oi.order_id = ${parseInt(orderId)}
       `;
-  
+
 -     // Fetch refunds
 +     // Fetch refunds - Note: This might need adjustment based on your actual refund table structure
       const refunds = await prisma.$queryRaw<OrderRefund[]>`
 -       SELECT *
 -       FROM wp_wc_order_refunds
 -       WHERE order_id = ${parseInt(orderId)}
-+       SELECT 
++       SELECT
 +         p.ID as id,
 +         p.post_date_gmt as date_created_gmt,
 +         pm_amount.meta_value as amount,
@@ -166,14 +159,15 @@ Now I understand the issue. The error is occurring because you're trying to quer
 +       LEFT JOIN wp_postmeta pm_items ON p.ID = pm_items.post_id AND pm_items.meta_key = '_refund_items'
 +       WHERE p.post_type = 'shop_order_refund' AND p.post_parent = ${parseInt(orderId)}
       `;
-  
+
 ```
 
 ---
 
 I've updated the SQL queries in your route.ts file to match the actual WooCommerce database structure. Here are the key changes I made:
 
-1. **Order Items Query**: 
+1. **Order Items Query**:
+
    - Changed from `wp_wc_order_items` to `wp_woocommerce_order_items` (the correct table name)
    - Added proper joins to `wp_woocommerce_order_itemmeta` to get SKU, price, quantity, and total information
    - Added joins to `wp_woocommerce_bundled_items` and `wp_woocommerce_bundled_itemmeta` for bundle product information
@@ -184,6 +178,7 @@ I've updated the SQL queries in your route.ts file to match the actual WooCommer
    - Used `post_parent` to link refunds to their parent order
 
 These changes align with the standard WooCommerce database structure, which uses:
+
 - `wp_woocommerce_order_items` for order items
 - `wp_woocommerce_order_itemmeta` for item metadata
 - `wp_posts` with `post_type = 'shop_order_refund'` for refunds
@@ -199,7 +194,4 @@ _**User**_
 
 ---
 
-
-
 ---
-

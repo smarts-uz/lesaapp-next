@@ -1,19 +1,23 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Package } from "lucide-react"
-import Image from "next/image"
-import type { Product } from "@/types/pos"
-import { formatCurrency } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Package } from "lucide-react";
+import Image from "next/image";
+import type { Product } from "@/types/pos";
+import { formatCurrency } from "@/lib/utils";
 
 interface ProductGridProps {
-  products: Product[]
-  isLoading: boolean
-  onAddToCart: (product: Product) => void
+  products: Product[];
+  isLoading: boolean;
+  onAddToCart: (product: Product) => void;
 }
 
-export function ProductGrid({ products, isLoading, onAddToCart }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  isLoading,
+  onAddToCart,
+}: ProductGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full">
@@ -29,7 +33,7 @@ export function ProductGrid({ products, isLoading, onAddToCart }: ProductGridPro
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -48,24 +52,36 @@ export function ProductGrid({ products, isLoading, onAddToCart }: ProductGridPro
                 fill
                 className="object-cover"
               />
-              {product.onSale && <Badge className="absolute top-2 right-2 bg-red-500">Sale</Badge>}
+              {product.onSale && (
+                <Badge className="absolute top-2 right-2 bg-red-500">
+                  Sale
+                </Badge>
+              )}
               {product.type === "bundle" && (
-                <Badge className="absolute top-2 left-2 bg-blue-500">Bundle</Badge>
+                <Badge className="absolute top-2 left-2 bg-blue-500">
+                  Bundle
+                </Badge>
               )}
             </div>
             <div className="p-3">
               <div className="flex items-center gap-1">
                 <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                {product.type === "bundle" && <Package className="h-3 w-3 text-blue-500" />}
+                {product.type === "bundle" && (
+                  <Package className="h-3 w-3 text-blue-500" />
+                )}
               </div>
               <div className="flex items-center justify-between mt-1">
-                <span className="font-bold">{formatCurrency(product.price)}</span>
-                <span className="text-xs text-muted-foreground">{product.stock} left</span>
+                <span className="font-bold">
+                  {formatCurrency(product.price)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {product.stock} left
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
     </div>
-  )
-} 
+  );
+}

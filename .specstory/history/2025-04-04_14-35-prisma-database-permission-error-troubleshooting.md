@@ -4,8 +4,6 @@
 
 _**User**_
 
-
-
 ---
 
 _**Assistant**_
@@ -13,6 +11,7 @@ _**Assistant**_
 I notice you haven't provided a specific query or request. However, I can see from the attached information that you're encountering an error while trying to run `npm run db` which executes Prisma database operations. The error appears to be a file permission issue when Prisma tries to generate its client.
 
 The specific error is:
+
 ```
 EPERM: operation not permitted, rename '...query_engine-windows.dll.node.tmp22236'
 ```
@@ -27,7 +26,4 @@ Would you like me to help you with any of these solutions or do you have a diffe
 
 ---
 
-
-
 ---
-

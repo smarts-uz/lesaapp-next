@@ -40,7 +40,11 @@ interface OrdersTableProps {
   onOrderClick?: (id: string) => void;
 }
 
-export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTableProps) {
+export function OrdersTable({
+  status,
+  initialOrders,
+  onOrderClick,
+}: OrdersTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [orders] = useState<Order[]>(initialOrders);
@@ -63,7 +67,7 @@ export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTable
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage
+    currentPage * ordersPerPage,
   );
 
   const getStatusColor = (status: string) => {
@@ -98,8 +102,8 @@ export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTable
           <TableBody>
             {paginatedOrders.length > 0 ? (
               paginatedOrders.map((order) => (
-                <TableRow 
-                  key={order.id} 
+                <TableRow
+                  key={order.id}
                   className="h-6 cursor-pointer hover:bg-muted/50"
                   onClick={() => onOrderClick && onOrderClick(order.id)}
                 >
@@ -177,7 +181,9 @@ export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTable
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * ordersPerPage) + 1} to {Math.min(currentPage * ordersPerPage, filteredOrders.length)} of {filteredOrders.length} orders
+            Showing {(currentPage - 1) * ordersPerPage + 1} to{" "}
+            {Math.min(currentPage * ordersPerPage, filteredOrders.length)} of{" "}
+            {filteredOrders.length} orders
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -197,22 +203,26 @@ export function OrdersTable({ status, initialOrders, onOrderClick }: OrdersTable
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center space-x-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                  className="w-8"
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className="w-8"
+                  >
+                    {page}
+                  </Button>
+                ),
+              )}
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
             >
               <ChevronRight className="h-4 w-4" />

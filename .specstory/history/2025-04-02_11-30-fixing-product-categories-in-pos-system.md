@@ -14,7 +14,6 @@ I'll help you fix the categories in the POS client component. Currently, the cod
 
 Let me first check the Product type to understand how categories are structured in the products data.
 
-
 ---
 
 <details>
@@ -54,11 +53,10 @@ Now I understand the issue. The current implementation is extracting categories 
 
 I'll edit the `pos-client.tsx` file to extract unique categories from the products' categories arrays instead of inferring them from product names:
 
-
 ---
 
 ```diff
-  
+
   export function POSClient({ products }: POSClientProps) {
 -   // Extract unique categories from product names
 +   // Extract unique categories from product categories arrays
@@ -77,8 +75,6 @@ I'll edit the `pos-client.tsx` file to extract unique categories from the produc
 ---
 
 Now I need to update the filtering logic to work with the new categories. Currently, it's filtering based on whether the product name includes the category name, but we should filter based on whether the product's categories array includes the selected category:
-
-
 
 ---
 
@@ -101,6 +97,7 @@ Here's a summary of the changes made:
 2. Modified the filtering logic to check if a product's categories array includes the selected category, rather than checking if the product name includes the category name.
 
 These changes ensure that:
+
 - All categories from the products are properly displayed in the tabs
 - Products are correctly filtered when a category is selected
 - The code is more maintainable as it uses the actual data structure rather than inferring categories from product names
@@ -109,7 +106,4 @@ The POS client will now correctly display and filter products based on their act
 
 ---
 
-
-
 ---
-

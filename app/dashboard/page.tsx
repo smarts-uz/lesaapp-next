@@ -77,7 +77,7 @@ export default async function POSPage() {
         is_bundle: boolean;
         image_url: string | null;
       }
-    >
+    >,
   );
 
   // Get all product IDs
@@ -215,7 +215,7 @@ export default async function POSPage() {
       const itemId = meta.bundled_item_id;
       for (const bundleId in bundledItemsData) {
         const itemIndex = bundledItemsData[bundleId].findIndex(
-          (item) => item.bundled_item_id === itemId
+          (item) => item.bundled_item_id === itemId,
         );
         if (itemIndex >= 0 && meta.meta_key) {
           bundledItemsData[bundleId][itemIndex].child_meta[meta.meta_key] =
@@ -273,7 +273,7 @@ export default async function POSPage() {
             price: Number(item.child_price || 0),
             defaultQuantity: Number(item.child_meta["default_quantity"] || 1),
             minQuantity: Number(item.child_meta["min_quantity"] || 1),
-            maxQuantity: Number(item.child_meta["max_quantity"] ),
+            maxQuantity: Number(item.child_meta["max_quantity"]),
             optional: item.child_meta["optional"] === "yes",
             menuOrder: Number(item.menu_order),
             visibility: item.child_meta["visibility"] || "visible",

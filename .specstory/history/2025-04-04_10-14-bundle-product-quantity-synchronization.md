@@ -62,9 +62,9 @@ Let me make the necessary changes to ensure the bundle quantity in the modal mat
 ---
 
 ```diff
-  
+
         setCustomizedItems(initialItems);
-+       
++
 +       // If editing an existing bundle in cart, set its quantity
 +       if (product.quantity) {
 +         setBundleQuantity(product.quantity);
@@ -80,7 +80,7 @@ I see the linter errors. The issue is that the `Product` type doesn't include th
 ---
 
 ```diff
-        
+
         // If editing an existing bundle in cart, set its quantity
 -       if (product.quantity) {
 +       if ('quantity' in product) {
@@ -95,7 +95,7 @@ I see the issue. We need to properly type check the quantity value before settin
 ---
 
 ```diff
-        
+
         // If editing an existing bundle in cart, set its quantity
 -       if ('quantity' in product) {
 +       if ('quantity' in product && typeof product.quantity === 'number') {
@@ -112,6 +112,7 @@ Great! The changes have been made successfully. Here's what we've done to ensure
 3. The existing `handleBundleQuantityChange` function already handles updating the bundle item quantities proportionally when the bundle quantity changes.
 
 This means that:
+
 1. When you open the bundle editor for an existing cart item, it will show the same quantity as in the cart
 2. When you change the bundle quantity, it will proportionally update all the bundled items' quantities
 3. When you save the changes, the updated quantities will be preserved in the cart
@@ -120,7 +121,4 @@ The synchronization between the cart and bundle editor should now work as expect
 
 ---
 
-
-
 ---
-

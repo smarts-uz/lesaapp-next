@@ -44,7 +44,7 @@ export default function Sidebar() {
               variant={pathname === route.href ? "secondary" : "ghost"}
               className={cn(
                 "w-full justify-start",
-                pathname === route.href && "bg-secondary"
+                pathname === route.href && "bg-secondary",
               )}
               asChild
             >

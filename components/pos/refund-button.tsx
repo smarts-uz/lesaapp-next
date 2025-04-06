@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,68 +10,68 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RefreshCcw, Search } from "lucide-react"
-import { fetchOrder } from "@/lib/woocommerce"
-import type { Order } from "@/types/pos"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCcw, Search } from "lucide-react";
+import { fetchOrder } from "@/lib/woocommerce";
+import type { Order } from "@/types/pos";
 
 interface RefundButtonProps {
-  onRefundProcessed?: () => void
+  onRefundProcessed?: () => void;
 }
 
 export function RefundButton({ onRefundProcessed }: RefundButtonProps) {
-  const [open, setOpen] = useState(false)
-  const [orderNumber, setOrderNumber] = useState("")
-  const [order, setOrder] = useState<Order | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchError, setSearchError] = useState("")
+  const [open, setOpen] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
 
   const handleSearch = async () => {
     if (!orderNumber) {
-      setSearchError("Please enter an order number")
-      return
+      setSearchError("Please enter an order number");
+      return;
     }
 
-    setIsSearching(true)
-    setSearchError("")
+    setIsSearching(true);
+    setSearchError("");
 
     try {
       // Extract the order ID from the order number (e.g., #ORD-123 -> 123)
-      const orderId = orderNumber.replace(/[^\d]/g, "")
-      const orderData = await fetchOrder(orderId)
+      const orderId = orderNumber.replace(/[^\d]/g, "");
+      const orderData = await fetchOrder(orderId);
 
       if (orderData) {
-        setOrder(orderData)
+        setOrder(orderData);
       } else {
-        setSearchError("Order not found")
+        setSearchError("Order not found");
       }
     } catch (error) {
-      console.error("Error searching for order:", error)
-      setSearchError("Failed to search for order")
+      console.error("Error searching for order:", error);
+      setSearchError("Failed to search for order");
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
-  }
+  };
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen)
+    setOpen(newOpen);
     if (!newOpen) {
       // Reset state when dialog closes
-      setOrderNumber("")
-      setOrder(null)
-      setSearchError("")
+      setOrderNumber("");
+      setOrder(null);
+      setSearchError("");
     }
-  }
+  };
 
   const handleViewOrder = () => {
     if (order) {
       // Navigate to order details page
-      window.open(`/dashboard/orders/${order.id}`, "_blank")
-      setOpen(false)
+      window.open(`/dashboard/orders/${order.id}`, "_blank");
+      setOpen(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -84,7 +84,9 @@ export function RefundButton({ onRefundProcessed }: RefundButtonProps) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Process Refund</DialogTitle>
-          <DialogDescription>Enter an order number to search for and process a refund.</DialogDescription>
+          <DialogDescription>
+            Enter an order number to search for and process a refund.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -97,11 +99,17 @@ export function RefundButton({ onRefundProcessed }: RefundButtonProps) {
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
               />
-              <Button type="button" onClick={handleSearch} disabled={isSearching}>
+              <Button
+                type="button"
+                onClick={handleSearch}
+                disabled={isSearching}
+              >
                 {isSearching ? "Searching..." : <Search className="h-4 w-4" />}
               </Button>
             </div>
-            {searchError && <p className="text-sm text-red-500">{searchError}</p>}
+            {searchError && (
+              <p className="text-sm text-red-500">{searchError}</p>
+            )}
           </div>
 
           {order && (
@@ -133,10 +141,11 @@ export function RefundButton({ onRefundProcessed }: RefundButtonProps) {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          {order && <Button onClick={handleViewOrder}>View Order Details</Button>}
+          {order && (
+            <Button onClick={handleViewOrder}>View Order Details</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

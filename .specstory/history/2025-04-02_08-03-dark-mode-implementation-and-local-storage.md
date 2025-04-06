@@ -14,42 +14,41 @@ I'll help you modify the settings page to handle dark mode with system preferenc
 
 Let me edit the file to add dark mode functionality:
 
-
 ---
 
 ```diff
   export default function SettingsPage() {
     const [currency, setCurrency] = useState("UZS")
 +   const [darkMode, setDarkMode] = useState(false)
-  
+
     useEffect(() => {
       const savedCurrency = localStorage.getItem("currency") || "UZS"
 +     const savedDarkMode = localStorage.getItem("darkMode")
 +     const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
-+     
++
       setCurrency(savedCurrency)
 +     setDarkMode(savedDarkMode === null ? systemDarkMode : savedDarkMode === "true")
     }, [])
-  
+
       localStorage.setItem("currency", value)
     }
-+ 
++
 +   const handleDarkModeChange = (checked: boolean) => {
 +     setDarkMode(checked)
 +     localStorage.setItem("darkMode", checked.toString())
 +     document.documentElement.classList.toggle("dark", checked)
 +   }
-+ 
++
 +   useEffect(() => {
 +     document.documentElement.classList.toggle("dark", darkMode)
 +   }, [darkMode])
-  
+
     return (
                   <p className="text-sm text-muted-foreground">Enable dark mode for the interface</p>
                 </div>
 -               <Switch id="dark-mode" />
-+               <Switch 
-+                 id="dark-mode" 
++               <Switch
++                 id="dark-mode"
 +                 checked={darkMode}
 +                 onCheckedChange={handleDarkModeChange}
 +               />
@@ -60,6 +59,7 @@ Let me edit the file to add dark mode functionality:
 ---
 
 I've made the following changes:
+
 1. Added dark mode state management with `useState`
 2. Added system preference detection using `window.matchMedia`
 3. Implemented local storage persistence for dark mode setting
@@ -67,6 +67,7 @@ I've made the following changes:
 5. Connected the Switch component to the dark mode state
 
 The dark mode will now:
+
 - Default to system preference on first visit
 - Save user preference in localStorage
 - Persist across page reloads
@@ -76,7 +77,4 @@ Make sure your Tailwind configuration has dark mode enabled to see the changes t
 
 ---
 
-
-
 ---
-

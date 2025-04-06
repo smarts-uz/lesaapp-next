@@ -5,9 +5,11 @@ interface POSCompatibilityWarningsProps {
   warnings: string[];
 }
 
-export function POSCompatibilityWarnings({ warnings }: POSCompatibilityWarningsProps) {
+export function POSCompatibilityWarnings({
+  warnings,
+}: POSCompatibilityWarningsProps) {
   if (warnings.length === 0) return null;
-  
+
   return (
     <Alert variant="warning">
       <AlertCircle className="h-4 w-4" />
@@ -21,4 +23,4 @@ export function POSCompatibilityWarnings({ warnings }: POSCompatibilityWarningsP
       </AlertDescription>
     </Alert>
   );
-} 
+}

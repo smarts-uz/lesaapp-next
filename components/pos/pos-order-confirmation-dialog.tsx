@@ -40,7 +40,7 @@ interface POSOrderConfirmationDialogProps {
 export function POSOrderConfirmationDialog({
   open,
   onOpenChange,
-  orderDetails
+  orderDetails,
 }: POSOrderConfirmationDialogProps) {
   if (!orderDetails) return null;
 
@@ -77,22 +77,26 @@ export function POSOrderConfirmationDialog({
                 <div>
                   <div className="flex items-center gap-1">
                     <p className="font-medium">{item.name}</p>
-                    {item.type === "bundle" && <Package className="h-3 w-3 text-blue-500" />}
+                    {item.type === "bundle" && (
+                      <Package className="h-3 w-3 text-blue-500" />
+                    )}
                   </div>
                   <p className="text-xs">
                     {item.quantity} x {formatCurrency(item.price)}
                   </p>
-                  {item.type === "bundle" && item.bundleItems && item.bundleItems.length > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1 pl-2 border-l-2">
-                      {item.bundleItems
-                        .filter((bundleItem) => bundleItem.quantity > 0)
-                        .map((bundleItem, idx) => (
-                          <div key={idx}>
-                            {bundleItem.name} x {bundleItem.quantity}
-                          </div>
-                        ))}
-                    </div>
-                  )}
+                  {item.type === "bundle" &&
+                    item.bundleItems &&
+                    item.bundleItems.length > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1 pl-2 border-l-2">
+                        {item.bundleItems
+                          .filter((bundleItem) => bundleItem.quantity > 0)
+                          .map((bundleItem, idx) => (
+                            <div key={idx}>
+                              {bundleItem.name} x {bundleItem.quantity}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                 </div>
                 <p className="font-medium">{formatCurrency(item.total)}</p>
               </div>
@@ -121,4 +125,4 @@ export function POSOrderConfirmationDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}

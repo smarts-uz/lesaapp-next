@@ -12,7 +12,6 @@ _**Assistant**_
 
 I'll fix the issue with the stock quantity property. The linter error indicates that `_wc_pb_bundle_stock_quantity` doesn't exist on the `CustomizedBundleItem` type. Let's first check the type definition to understand what properties are available.
 
-
 ---
 
 <details>
@@ -54,8 +53,6 @@ Now I understand the issue. Looking at the type definitions, I can see that `Cus
 
 Let's fix this by updating the code to use the correct property name:
 
-
-
 ---
 
 ```diff
@@ -79,7 +76,4 @@ This change should resolve the TypeScript error while maintaining the same funct
 
 ---
 
-
-
 ---
-

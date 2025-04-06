@@ -4,14 +4,13 @@
 
 _**User**_
 
-Display stock items left 
+Display stock items left
 
 ---
 
 _**Assistant**_
 
 Let me search for relevant code to understand how stock information is handled.
-
 
 ---
 
@@ -52,7 +51,6 @@ Let me search for relevant code to understand how stock information is handled.
 
 Let me check the bundle customization dialog to add stock information display.
 
-
 ---
 
 ```diff
@@ -68,7 +66,6 @@ Let me check the bundle customization dialog to add stock information display.
 ---
 
 Let me check the type definition to add the stock property.
-
 
 ---
 
@@ -88,14 +85,13 @@ I've added stock information display to the bundle customization dialog. Each bu
 
 _**User**_
 
-@pos get stock items too 
+@pos get stock items too
 
 ---
 
 _**Assistant**_
 
 Let me check the POS page to see how we can include stock information for bundle items.
-
 
 ---
 
@@ -105,30 +101,29 @@ Read file: app/dashboard/pos/page.tsx
 
 Let me modify the POS page to include stock information for bundle items.
 
-
 ---
 
 ```diff
       `
-  
+
 +     // Get stock information for bundled items
 +     const bundledItemStock = await prisma.$queryRaw<Array<{
 +       post_id: bigint
 +       meta_value: string | null
 +     }>>`
-+       SELECT 
++       SELECT
 +         post_id,
 +         meta_value
 +       FROM wp_postmeta
 +       WHERE post_id IN (${bundledItems.map(item => item.product_id).join(',')})
 +       AND meta_key = '_stock'
 +     `
-+     
++
       // Add metadata to bundled items
       bundledItemMetadata.forEach(meta => {
         }
       })
-+ 
++
 +     // Add stock information to bundled items
 +     bundledItemStock.forEach(stockData => {
 +       const productId = stockData.post_id
@@ -141,7 +136,7 @@ Let me modify the POS page to include stock information for bundle items.
 +       }
 +     })
     }
-  
+
               discount: item.child_meta['discount'] || null,
               priceVisibility: item.child_meta['price_visibility'] || 'visible',
 +             stock: Number(item.child_meta['_stock'] || 0),
@@ -161,7 +156,4 @@ Now the stock information will be available in the bundle customization dialog a
 
 ---
 
-
-
 ---
-

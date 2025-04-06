@@ -4,14 +4,13 @@
 
 _**User**_
 
-Display left stock on all items 
+Display left stock on all items
 
 ---
 
 _**Assistant**_
 
 I'll modify the product grid to display the stock count for all items, not just those with 5 or fewer items left. This will give users better visibility into product availability.
-
 
 ---
 
@@ -35,7 +34,4 @@ Would you like me to make any additional changes to how the stock information is
 
 ---
 
-
-
 ---
-

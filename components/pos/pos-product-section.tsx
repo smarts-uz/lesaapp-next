@@ -11,12 +11,13 @@ interface POSProductSectionProps {
   onAddToCart: (product: Product) => void;
 }
 
-export function POSProductSection({ products, onAddToCart }: POSProductSectionProps) {
+export function POSProductSection({
+  products,
+  onAddToCart,
+}: POSProductSectionProps) {
   // Extract unique categories from product categories arrays
   const categories = Array.from(
-    new Set(
-      products.flatMap((product) => product.categories)
-    )
+    new Set(products.flatMap((product) => product.categories)),
   );
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,13 +38,13 @@ export function POSProductSection({ products, onAddToCart }: POSProductSectionPr
 
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
     if (activeCategory !== "all") {
       filtered = filtered.filter((product) =>
-        product.categories.includes(activeCategory)
+        product.categories.includes(activeCategory),
       );
     }
 
@@ -98,4 +99,4 @@ export function POSProductSection({ products, onAddToCart }: POSProductSectionPr
       </Tabs>
     </div>
   );
-} 
+}

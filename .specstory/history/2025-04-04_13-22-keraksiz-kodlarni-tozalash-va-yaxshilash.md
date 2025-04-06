@@ -57,22 +57,22 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 
 ```diff
   // All functions have been moved to the lib/woocommerce directory
-  
+
 - // Re-export all functions from the new location
 - export { fetchProducts } from './woocommerce/products';
 - export { createOrder, fetchOrder } from './woocommerce/orders';
 - export { processRefund } from './woocommerce/refunds';
-- export { 
--   getOrderItems, 
--   getOrderBundleItems, 
--   getRefundableItems, 
--   getRefundableBundleItems 
+- export {
+-   getOrderItems,
+-   getOrderBundleItems,
+-   getRefundableItems,
+-   getRefundableBundleItems
 - } from './woocommerce/utils';
 + // Export all functions from the woocommerce directory
 + export * from './woocommerce/products';
 + export * from './woocommerce/orders';
 + export * from './woocommerce/utils';
-  
+
 ```
 
 ---
@@ -84,21 +84,21 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 ```diff
   import { POSCartSection } from "@/components/pos/pos-cart-section";
   import { POSOrderConfirmationDialog } from "@/components/pos/pos-order-confirmation-dialog";
-+ 
++
 + // Import the compatibility check function
 + import { checkCompatibilityWarnings } from '@/lib/woocommerce/orders';
-  
+
   interface POSClientProps {
     // Check for compatibility warnings in the cart
     useEffect(() => {
 -     const warnings: string[] = [];
-- 
+-
 -     // Get all bundle items in the cart
 -     const allBundleItems = cart
 -       .filter((item) => item.type === "bundle" && item.bundleItems)
 -       .flatMap((item) => item.bundleItems || [])
 -       .filter((item) => item.quantity > 0);
-- 
+-
 -     // Check if we have frames but no braces
 -     const hasFrames = allBundleItems.some((item) =>
 -       item.name.toLowerCase().includes("frame")
@@ -106,29 +106,29 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 -     const hasBraces = allBundleItems.some((item) =>
 -       item.name.toLowerCase().includes("brace")
 -     );
-- 
+-
 -     if (hasFrames && !hasBraces) {
 -       warnings.push("Your cart has scaffold frames but no cross braces");
 -     }
-- 
+-
 -     // Check if we have platforms but no frames
 -     const hasPlatforms = allBundleItems.some((item) =>
 -       item.name.toLowerCase().includes("platform")
 -     );
-- 
+-
 -     if (hasPlatforms && !hasFrames) {
 -       warnings.push("Your cart has platforms but no scaffold frames");
 -     }
-- 
+-
 -     // Check if we have guardrails but no platforms
 -     const hasGuardrails = allBundleItems.some((item) =>
 -       item.name.toLowerCase().includes("guardrail")
 -     );
-- 
+-
 -     if (hasGuardrails && !hasPlatforms) {
 -       warnings.push("Your cart has guardrails but no platforms");
 -     }
-- 
+-
 +     const warnings = checkCompatibilityWarnings(cart);
       setCompatibilityWarnings(warnings);
     }, [cart]);
@@ -146,7 +146,7 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 - function checkCompatibilityWarnings(items: any[]): string[] {
 + export function checkCompatibilityWarnings(items: any[]): string[] {
     const compatibilityWarnings: string[] = [];
-    
+
 ```
 
 ---
@@ -157,7 +157,7 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 
 ```diff
   import { QuantityControl } from "./bundle-customization-dialog"
-  
+
 - const calculateItemTotal = (item: CartItem) => {
 -   if (item.type === "bundle") {
 -     return item.price * item.quantity;
@@ -165,7 +165,7 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 -   return item.price * item.quantity;
 - }
 + const calculateItemTotal = (item: CartItem) => item.price * item.quantity;
-  
+
   interface CartItemProps {
 ```
 
@@ -178,9 +178,9 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 ```diff
   import { useRouter } from 'next/router';
   import { useEffect } from 'react';
-+ 
++
 + const namespaces = ['common', 'home', 'pos', 'dashboard', 'components'];
-  
+
   i18n
       fallbackLng: 'en',
       defaultNS: 'common',
@@ -198,14 +198,14 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 
 ```diff
   }
-  
+
 - mergeConfig(nextConfig, userConfig)
-- 
+-
 - function mergeConfig(nextConfig, userConfig) {
 -   if (!userConfig) {
 -     return
 -   }
-- 
+-
 -   for (const key in userConfig) {
 -     if (
 -       typeof nextConfig[key] === 'object' &&
@@ -227,7 +227,7 @@ Based on my analysis of the codebase, I can see several areas where we can clean
 -   }
 +   })
   }
-  
+
 ```
 
 ---
@@ -241,6 +241,7 @@ I've made several improvements to clean up the codebase and follow best practice
 5. Cleaned up next.config.mjs by using more modern JavaScript features and improving readability
 
 These changes:
+
 - Remove code duplication
 - Improve code organization
 - Follow DRY (Don't Repeat Yourself) principles
@@ -252,7 +253,4 @@ The code should now be cleaner and more maintainable. Let me know if you'd like 
 
 ---
 
-
-
 ---
-
