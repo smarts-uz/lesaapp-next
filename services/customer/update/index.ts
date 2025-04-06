@@ -1,1 +1,1 @@
-export { updateCustomerClientType } from './updateCustomerClientType' 
+export { updateCustomerClientType } from "./updateCustomerClientType";
