@@ -202,3 +202,12 @@ export interface Discount {
   value: number;
   products: string[];
 }
+
+export interface OrderSummary {
+  id: string;
+  number: string;
+  date: string;
+  customer: string;
+  status: string;
+  total: number;
+}
