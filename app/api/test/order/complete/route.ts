@@ -26,147 +26,334 @@ export async function POST(request: Request) {
 
     const { orderId } = parsedBody.data;
 
-    // Start a transaction
-    return await prisma.$transaction(async (tx) => {
-      // 1. Get the order
-      const order = await tx.wp_wc_orders.findUnique({
-        where: { id: BigInt(orderId) },
-      });
+    const order = await prisma.wp_wc_orders.findUnique({
+      where: {
+        id: Number(orderId),
+      },
+    });
+    console.log("order", order);
 
-      if (!order) {
-        return NextResponse.json({ error: "Order not found" }, { status: 404 });
-      }
+    if (!order?.id) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
 
-      // Check if the order is already completed - use is_completed as the primary flag
-      if (order.is_completed === true) {
-        // If order is already completed, get existing lost products
-        const lostProducts = await tx.wp_wc_order_lost_product.findMany({
+    if (order.status !== "completed") {
+      return NextResponse.json(
+        { error: "Order is not completed" },
+        { status: 400 }
+      );
+    }
+
+    const refundedOrders = await prisma.wp_wc_orders.findMany({
+      where: {
+        parent_order_id: Number(orderId),
+      },
+    });
+
+    console.log("refundedOrders", refundedOrders);
+    const refundedItems = [];
+    if (refundedOrders?.length > 0) {
+      for (const order of refundedOrders) {
+        const orderItems = await prisma.wp_wc_order_product_lookup.findMany({
           where: {
-            order_id: BigInt(orderId),
+            order_id: order.id,
           },
         });
-
-        // For each lost product, get the original quantity
-        const enhancedLostProducts = await Promise.all(
-          lostProducts.map(async (item: any) => {
-            // Get original quantity from order item meta
-            const qtyMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
-              where: {
-                order_item_id: item.order_item_id,
-                meta_key: '_qty',
-              },
-            });
-            
-            const originalQty = qtyMeta && qtyMeta.meta_value ? 
-              parseInt(qtyMeta.meta_value.toString(), 10) : 
-              // Fallback to product lookup
-              await tx.wp_wc_order_product_lookup.findFirst({
-                where: { order_item_id: item.order_item_id },
-                select: { product_qty: true },
-              }).then(lookup => lookup?.product_qty || 0);
-
-            return {
-              orderItemId: Number(item.order_item_id),
-              productId: Number(item.product_id),
-              originalQuantity: originalQty,
-              remainingQuantity: item.product_qty,
-              refundedQuantity: originalQty - item.product_qty,
-            };
-          })
-        );
-
-        return NextResponse.json({
-          success: true,
-          message: "Order was already completed",
-          orderId: Number(orderId),
-          status: order.status,
-          is_completed: true,
-          lostProductsCount: enhancedLostProducts.length,
-          lostProducts: enhancedLostProducts.length > 0 ? enhancedLostProducts : undefined,
-        });
+        refundedItems.push(...orderItems);
       }
+    }
 
-      // 2. Get all order items
-      const orderItems = await tx.wp_woocommerce_order_items.findMany({
-        where: {
-          order_id: BigInt(orderId),
-          order_item_type: "line_item",
-        },
-      });
+    console.log("refundedItems", refundedItems);
 
-      if (!orderItems.length) {
-        return NextResponse.json(
-          { error: "No order items found" },
-          { status: 400 }
-        );
-      }
+    // [
+    //   {
+    //     order_item_id: 165n,
+    //     order_id: 1743917525n,
+    //     product_id: 66n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:34:57.000Z,
+    //     product_qty: -1,
+    //     product_net_revenue: -4500,
+    //     product_gross_revenue: -4500,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 166n,
+    //     order_id: 1743917525n,
+    //     product_id: 64n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:34:57.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 167n,
+    //     order_id: 1743917525n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:34:57.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 168n,
+    //     order_id: 1743917525n,
+    //     product_id: 63n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:34:57.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 169n,
+    //     order_id: 1743917525n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:34:57.000Z,
+    //     product_qty: -1,
+    //     product_net_revenue: -2900,
+    //     product_gross_revenue: -2900,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 176n,
+    //     order_id: 1743917989n,
+    //     product_id: 66n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T06:11:28.000Z,
+    //     product_qty: -1,
+    //     product_net_revenue: -4500,
+    //     product_gross_revenue: -4500,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 1638000n,
+    //     used_days: 366,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 177n,
+    //     order_id: 1743917989n,
+    //     product_id: 64n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T06:11:28.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: 366,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 178n,
+    //     order_id: 1743917989n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T06:11:28.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: 366,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 179n,
+    //     order_id: 1743917989n,
+    //     product_id: 63n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T06:11:28.000Z,
+    //     product_qty: -2,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 0n,
+    //     used_days: 366,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 180n,
+    //     order_id: 1743917989n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T06:11:28.000Z,
+    //     product_qty: -1,
+    //     product_net_revenue: -2900,
+    //     product_gross_revenue: -2900,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: 1055600n,
+    //     used_days: 366,
+    //     discount_days: null
+    //   }
+    // ]
 
-      // 3. Process order items (attempt refunds and record lost products)
-      const processResults = await processOrderItems(tx, BigInt(orderId));
+    // =====================================================
 
-      // 4. Update order status to completed and set is_completed to true
-      await updateOrderStatus({ tx, orderId: BigInt(orderId) });
+    // items [
+    //   {
+    //     order_item_id: 159n,
+    //     order_id: 1743917491n,
+    //     product_id: 66n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:31:31.000Z,
+    //     product_qty: 10,
+    //     product_net_revenue: 45000,
+    //     product_gross_revenue: 45000,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: null,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 160n,
+    //     order_id: 1743917491n,
+    //     product_id: 64n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:31:31.000Z,
+    //     product_qty: 10,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: null,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 161n,
+    //     order_id: 1743917491n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:31:31.000Z,
+    //     product_qty: 10,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: null,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 162n,
+    //     order_id: 1743917491n,
+    //     product_id: 63n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:31:31.000Z,
+    //     product_qty: 10,
+    //     product_net_revenue: 0,
+    //     product_gross_revenue: 0,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: null,
+    //     used_days: null,
+    //     discount_days: null
+    //   },
+    //   {
+    //     order_item_id: 163n,
+    //     order_id: 1743917491n,
+    //     product_id: 65n,
+    //     variation_id: 0n,
+    //     customer_id: 0n,
+    //     date_created: 2025-04-06T05:31:31.000Z,
+    //     product_qty: 10,
+    //     product_net_revenue: 29000,
+    //     product_gross_revenue: 29000,
+    //     coupon_amount: 0,
+    //     tax_amount: 0,
+    //     shipping_amount: 0,
+    //     shipping_tax_amount: 0,
+    //     rental_price: null,
+    //     used_days: null,
+    //     discount_days: null
+    //   }
+    // ]
 
-      // 5. Get the updated order to confirm status change
-      const updatedOrder = await tx.wp_wc_orders.findUnique({
-        where: { id: BigInt(orderId) },
-      });
+    const orderItems = await prisma.wp_wc_order_product_lookup.findMany({
+      where: {
+        order_id: Number(orderId),
+      },
+    });
+    console.log("items", orderItems);
 
-      if (!updatedOrder) {
-        return NextResponse.json(
-          { error: "Failed to retrieve updated order" },
-          { status: 500 }
-        );
-      }
-
-      // 6. Get the lost products from the database for consistent results
-      const lostProducts = await tx.wp_wc_order_lost_product.findMany({
-        where: {
-          order_id: BigInt(orderId),
-        },
-      });
-
-      // For each lost product, get the original quantity
-      const enhancedLostProducts = await Promise.all(
-        lostProducts.map(async (item: any) => {
-          // Get original quantity from order item meta
-          const qtyMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
-            where: {
-              order_item_id: item.order_item_id,
-              meta_key: '_qty',
-            },
-          });
-          
-          const originalQty = qtyMeta && qtyMeta.meta_value ? 
-            parseInt(qtyMeta.meta_value.toString(), 10) : 
-            // Fallback to product lookup
-            await tx.wp_wc_order_product_lookup.findFirst({
-              where: { order_item_id: item.order_item_id },
-              select: { product_qty: true },
-            }).then(lookup => lookup?.product_qty || 0);
-
-          return {
-            orderItemId: Number(item.order_item_id),
-            productId: Number(item.product_id),
-            originalQuantity: originalQty,
-            remainingQuantity: item.product_qty,
-            refundedQuantity: originalQty - item.product_qty,
-          };
-        })
-      );
-
-      // 7. Return success response with summary
-      return NextResponse.json({
-        success: true,
-        message: "Order completed successfully",
-        orderId: Number(orderId),
-        status: updatedOrder.status,
-        is_completed: updatedOrder.is_completed,
-        totalItems: orderItems.length,
-        refundedItemsCount: orderItems.length - lostProducts.length,
-        lostProductsCount: enhancedLostProducts.length,
-        lostProducts: enhancedLostProducts.length > 0 ? enhancedLostProducts : undefined,
-      });
+    return NextResponse.json({
+      success: true,
+      message: "Order completed successfully",
+      orderId: Number(orderId),
     });
   } catch (error) {
     console.error("Failed to complete order:", error);
