@@ -41,11 +41,9 @@ const RefundRequestSchema = z.object({
   refundPayment: z.boolean().optional().default(false),
   refundType: z.enum(["partial", "full"]).optional().default("partial"),
   discountDays: z.number().nonnegative(),
-  endDate: z
-    .string()
-    .refine((date) => !isNaN(Date.parse(date)), {
-      message: "Invalid date format",
-    }),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid date format",
+  }),
 });
 
 // Type definitions derived from Zod schemas
