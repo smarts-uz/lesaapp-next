@@ -1251,6 +1251,214 @@ The function is flexible enough to handle both generated meta data and pre-creat
 
 ---
 
+_**User**_
+
+do the same with this code 
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+- 
++ interface TransactionClient {
++   wp_wc_orders: {
++     findUnique: Function;
++   };
++ }
++ 
++ type OrderSelect = {
++   [key: string]: boolean;
++ };
++ 
++ /**
++  * Finds an order by ID within a transaction
++  */
++ export async function findOrderById<T = any>({
++   tx,
++   orderId,
++   select,
++   throwIfNotFound = true,
++ }: {
++   tx: TransactionClient;
++   orderId: number | string;
++   select?: OrderSelect;
++   throwIfNotFound?: boolean;
++ }): Promise<T | null> {
++   const order = await tx.wp_wc_orders.findUnique({
++     where: {
++       id: BigInt(orderId),
++     },
++     select,
++   });
++ 
++   if (!order && throwIfNotFound) {
++     throw new Error(`Order with ID ${orderId} not found`);
++   }
++ 
++   return order;
++ } 
+```
+
+---
+
+<details>
+            <summary>Listed directory services/order/fetch • **3** results</summary>
+        
+| Name |
+|-------|
+| 📄 `findOrderById.ts` |
+| 📄 `index.ts` |
+| 📄 `fetchOrders.ts` |
+
+</details>
+
+---
+
+Read file: services/order/fetch/index.ts
+
+---
+
+```diff
+  export { fetchOrders } from './fetchOrders';
+  export type { FormattedOrder } from './fetchOrders';
++ export { findOrderById } from './findOrderById'; 
+```
+
+---
+
+```diff
+  import { NextResponse } from "next/server";
+  import { prisma } from "@/lib/prisma";
++ import { findOrderById } from "@/services/order/fetch";
+  
+  interface RefundRequest {
+        async (tx) => {
+          // Get the original order to verify it exists
+-         const originalOrder = await tx.wp_wc_orders.findUnique({
+-           where: {
+-             id: BigInt(orderId),
+-           },
++         const originalOrder = await findOrderById({
++           tx,
++           orderId,
+            select: {
+              id: true,
+```
+
+---
+
+Cancelled
+
+---
+
+_**User**_
+
+save it inside services/refund/create dir already exists
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+- 
++ interface TransactionClient {
++   wp_wc_orders: {
++     findUnique: Function;
++   };
++ }
++ 
++ type OrderSelect = {
++   [key: string]: boolean;
++ };
++ 
++ /**
++  * Finds an order by ID within a transaction
++  */
++ export async function findOrderById<T = any>({
++   tx,
++   orderId,
++   select,
++   throwIfNotFound = true,
++ }: {
++   tx: TransactionClient;
++   orderId: number | string;
++   select?: OrderSelect;
++   throwIfNotFound?: boolean;
++ }): Promise<T | null> {
++   const order = await tx.wp_wc_orders.findUnique({
++     where: {
++       id: BigInt(orderId),
++     },
++     select,
++   });
++ 
++   if (!order && throwIfNotFound) {
++     throw new Error(`Order with ID ${orderId} not found`);
++   }
++ 
++   return order;
++ } 
+```
+
+---
+
+<details>
+            <summary>Listed directory services/refund/create • **1** results</summary>
+        
+| Name |
+|-------|
+| 📄 `findOrderById.ts` |
+
+</details>
+
+---
+
+```diff
+- 
++ // Export refund creation services
++ export { findOrderById } from './findOrderById'; 
+```
+
+---
+
+<details>
+            <summary>Listed directory services/refund • **2** results</summary>
+        
+| Name |
+|-------|
+| 📁 `create` |
+| 📁 `fetch` |
+
+</details>
+
+---
+
+```diff
+- 
++ // Re-export from subdirectories
++ export * from './create';
++ export * from './fetch'; 
+```
+
+---
+
+Cancelled
+
+---
+
+
+
+---
+
 
 
 ---
