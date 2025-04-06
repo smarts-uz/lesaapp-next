@@ -32,8 +32,7 @@ import {
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { RefundHistoryCell } from "@/components/dashboard/refund-history-cell";
-import { Order } from "@/lib/prisma/orders";
-
+import type { Order } from "@/types/pos";
 interface OrdersTableProps {
   status?: string;
   initialOrders: Order[];
@@ -57,7 +56,7 @@ export function OrdersTable({
       const query = searchQuery.toLowerCase();
       return (
         order.number.toLowerCase().includes(query) ||
-        order.customer.toLowerCase().includes(query)
+        order.customer.name.toLowerCase().includes(query)
       );
     }
     return true;
@@ -67,7 +66,7 @@ export function OrdersTable({
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage,
+    currentPage * ordersPerPage
   );
 
   const getStatusColor = (status: string) => {
@@ -118,7 +117,7 @@ export function OrdersTable({
                   <TableCell>
                     {new Date(order.date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>{order.customer}</TableCell>
+                  <TableCell>{order?.customer?.name ?? ""}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(order.status)}>
                       {order.status.charAt(0).toUpperCase() +
@@ -214,7 +213,7 @@ export function OrdersTable({
                   >
                     {page}
                   </Button>
-                ),
+                )
               )}
             </div>
             <Button
