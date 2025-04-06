@@ -32,7 +32,8 @@ import {
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { RefundHistoryCell } from "@/components/dashboard/refund-history-cell";
-import type { Order } from "@/types/pos";
+import { Order } from "@/types/pos";
+
 interface OrdersTableProps {
   status?: string;
   initialOrders: Order[];
@@ -66,7 +67,7 @@ export function OrdersTable({
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage
+    currentPage * ordersPerPage,
   );
 
   const getStatusColor = (status: string) => {
@@ -213,7 +214,7 @@ export function OrdersTable({
                   >
                     {page}
                   </Button>
-                )
+                ),
               )}
             </div>
             <Button

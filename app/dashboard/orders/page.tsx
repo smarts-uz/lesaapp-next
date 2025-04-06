@@ -33,6 +33,16 @@ import React from "react";
 import { OrdersTable } from "@/components/dashboard/orders-table";
 import { useSearchParams, useRouter } from "next/navigation";
 
+// Define a simplified order summary type
+interface OrderSummary {
+  id: string;
+  number: string;
+  date: string;
+  customer: string;
+  status: string;
+  total: number;
+}
+
 // Create a separate component that uses useSearchParams
 function OrdersContent() {
   const searchParams = useSearchParams();
@@ -42,16 +52,7 @@ function OrdersContent() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(orderId ? "details" : "list");
-  const [orders, setOrders] = useState<
-    Array<{
-      id: string;
-      number: string;
-      date: string;
-      customer: string;
-      status: string;
-      total: number;
-    }>
-  >([]);
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [orderDetails, setOrderDetails] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);

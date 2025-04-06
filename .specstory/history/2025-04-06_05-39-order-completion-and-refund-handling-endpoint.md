@@ -3776,9 +3776,340 @@ Now let's also update our checkIfRefunded function to ensure it's properly check
 
 ---
 
+```diff
+    orderItemId: bigint
+  ): Promise<RefundCheckResult> {
++   console.log(`Checking refund status for item ${orderItemId}`);
++   
+    // First get the original quantity
+    const originalQty = await getOriginalQuantity(tx, orderItemId);
+    
+-   // Check for refunds in order item meta
+-   const refundMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
+-     where: {
+-       order_item_id: orderItemId,
+-       meta_key: "_refunded_item_id",
+-     },
+-   });
+- 
+-   // Get refunded quantity from meta
++   // Keep track of total refunded quantity across all sources
++   let totalRefundedQty = 0;
++   
++   // 1. Check for direct refund quantities in order item meta
+    const refundedQtyMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
+      where: {
+    });
+    
+-   // Parse refunded quantity, defaulting to 0 if not found
+-   const refundedQty =
+-     refundedQtyMeta && refundedQtyMeta.meta_value
+-       ? parseInt(refundedQtyMeta.meta_value.toString(), 10) || 0
+-       : 0;
+- 
+-   // Check in refund tables for refund records
+-   const refundRecords = await tx.$queryRaw`
+-     SELECT oim.meta_value as refunded_qty
++   if (refundedQtyMeta && refundedQtyMeta.meta_value) {
++     const metaRefundQty = parseInt(refundedQtyMeta.meta_value.toString(), 10) || 0;
++     totalRefundedQty += metaRefundQty;
++     console.log(`Found direct refund quantity in meta: ${metaRefundQty}`);
++   }
++   
++   // 2. Check for refund items that reference this order item
++   const refundItems = await tx.$queryRaw`
++     SELECT oi.order_item_id, oim.meta_value as refunded_qty
+      FROM wp_woocommerce_order_items oi
+      JOIN wp_woocommerce_order_itemmeta oim ON oi.order_item_id = oim.order_item_id
++     JOIN wp_woocommerce_order_itemmeta oim2 ON oi.order_item_id = oim2.order_item_id
+      WHERE oi.order_item_type = 'line_item' 
+-     AND oim.meta_key = '_refunded_item_id'
+-     AND oim.meta_value = ${orderItemId.toString()}
++     AND oim.meta_key = '_refunded_qty'
++     AND oim2.meta_key = '_refunded_item_id'
++     AND oim2.meta_value = ${orderItemId.toString()}
+    `;
+    
+-   // Calculate total refunded quantity from all records
+-   let totalRefundedQty = refundedQty;
+- 
+-   if (Array.isArray(refundRecords) && refundRecords.length > 0) {
+-     refundRecords.forEach((record) => {
++   if (Array.isArray(refundItems) && refundItems.length > 0) {
++     for (const record of refundItems) {
+        if (record.refunded_qty) {
+-         totalRefundedQty += parseInt(record.refunded_qty.toString(), 10) || 0;
++         const refundQty = parseInt(record.refunded_qty.toString(), 10) || 0;
++         totalRefundedQty += refundQty;
++         console.log(`Found refund item referencing item ${orderItemId}: ${refundQty} units`);
+        }
+-     });
++     }
+    }
+    
+-   // Also check for our own refund tracking meta
++   // 3. Check for our custom refund tracking meta
+    const processingMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
+      where: {
+    
+    if (processingMeta && processingMeta.meta_value) {
+-     totalRefundedQty += parseInt(processingMeta.meta_value.toString(), 10) || 0;
+-   }
+- 
+-   // An item is considered fully refunded if it has refund records and the quantity matches or exceeds original
++     const processedQty = parseInt(processingMeta.meta_value.toString(), 10) || 0;
++     totalRefundedQty += processedQty;
++     console.log(`Found custom refund tracking meta: ${processedQty} units`);
++   }
++   
++   // 4. Also check potential parent-child relationships for bundles
++   // This is important when refunds are applied at the parent level but need to be calculated down to children
++   const bundleChild = await tx.wp_wc_order_bundle_lookup.findFirst({
++     where: {
++       order_item_id: orderItemId,
++     },
++   }).catch(() => null);
++   
++   if (bundleChild) {
++     // This is a bundle child, check if parent has been refunded
++     const parentItemId = bundleChild.parent_order_item_id;
++     const parentRefundCheck = await checkParentItemRefund(tx, parentItemId, orderItemId, bundleChild.product_qty);
++     
++     // Add any parent-derived refund quantities
++     if (parentRefundCheck.refundedQty > 0) {
++       totalRefundedQty += parentRefundCheck.refundedQty;
++       console.log(`Found parent item ${parentItemId} refund affecting this bundle child: ${parentRefundCheck.refundedQty} units`);
++     }
++   }
++   
++   // An item is considered fully refunded if the total refunded quantity matches or exceeds the original
+    const isFullyRefunded = totalRefundedQty >= originalQty;
++   
++   console.log(`Item ${orderItemId} refund status: original=${originalQty}, refunded=${totalRefundedQty}, fully refunded=${isFullyRefunded}`);
+    
+    return {
+    };
+  }
++ 
++ /**
++  * Helper function to check parent item refunds and calculate impact on child items
++  */
++ async function checkParentItemRefund(
++   tx: any, 
++   parentItemId: bigint, 
++   childItemId: bigint,
++   childOriginalQty: number
++ ): Promise<{ refundedQty: number }> {
++   // Get parent item's original and refunded quantities
++   const parentOriginalQty = await getOriginalQuantity(tx, parentItemId);
++   
++   // Skip the current function in the parent check to avoid infinite recursion
++   let parentRefundedQty = 0;
++   
++   // Check for direct refund quantities in parent's meta
++   const refundedQtyMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
++     where: {
++       order_item_id: parentItemId,
++       meta_key: "_refunded_qty",
++     },
++   });
++   
++   if (refundedQtyMeta && refundedQtyMeta.meta_value) {
++     parentRefundedQty += parseInt(refundedQtyMeta.meta_value.toString(), 10) || 0;
++   }
++   
++   // Check our custom refund tracking meta for the parent
++   const processingMeta = await tx.wp_woocommerce_order_itemmeta.findFirst({
++     where: {
++       order_item_id: parentItemId,
++       meta_key: "_refund_processed_qty",
++     },
++   });
++   
++   if (processingMeta && processingMeta.meta_value) {
++     parentRefundedQty += parseInt(processingMeta.meta_value.toString(), 10) || 0;
++   }
++   
++   // Calculate refund ratio from parent
++   if (parentOriginalQty <= 0) {
++     return { refundedQty: 0 };
++   }
++   
++   const parentRefundRatio = parentRefundedQty / parentOriginalQty;
++   
++   // Calculate child's refunded quantity based on parent's refund ratio
++   const childRefundedQty = Math.floor(childOriginalQty * parentRefundRatio);
++   
++   return { refundedQty: childRefundedQty };
++ }
+  
+  /**
+```
+
+---
+
+These changes enhance our code to properly handle item-specific refund tracking:
+
+1. **Enhanced Refund Simulation**:
+   - The `simulatePaymentGatewayRefund` function now uses both product ID and item ID to determine refund eligibility
+   - Added an exclusion list for specific item IDs (configurable based on business rules)
+   - The function returns detailed error messages explaining why a refund was declined
+   - Added more detailed logging to track the refund decision process
+
+2. **Improved Refund Status Checking**:
+   - The `checkIfRefunded` function now performs more thorough checks across multiple sources
+   - Added detailed logging to track where refund quantities are coming from
+   - The function checks:
+     1. Direct refund quantities in order item meta
+     2. Refund items that specifically reference this order item
+     3. Custom refund tracking metadata
+     4. Parent-child relationships for bundle items
+
+3. **Bundle Item Handling**:
+   - Added a new `checkParentItemRefund` helper function to calculate how parent refunds affect bundle children
+   - This ensures that when a bundle parent is partially refunded, the appropriate quantities are allocated to its children
+   - Uses refund ratios to calculate the proportional refund for each child item
+
+4. **Better Debugging and Logging**:
+   - Added comprehensive logging throughout the refund process
+   - Each step of the refund check and simulation is logged
+   - Item details (ID, product ID, name) are logged for better traceability
+
+These changes ensure that:
+1. The system can exclude specific items from automatic refunds using their item IDs
+2. Refund status checks properly account for all sources of refund data
+3. Bundle parent-child relationships are correctly handled
+4. Detailed logging helps with debugging and audit trails
+
+Let me know if you'd like any further adjustments to the implementation.
+
+---
+
+_**User**_
+
+For the code present, we get this error:
+```
+Type '{ id: string; number: string; date: string; customer: string; status: string; total: number; }[]' is not assignable to type 'Order[]'.
+  Type '{ id: string; number: string; date: string; customer: string; status: string; total: number; }' is missing the following properties from type 'Order': billing, shipping, payment, items, and 4 more.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+The error occurs because the `OrdersTable` component expects `Order[]` but you're passing a simplified order type. To fix this, modify the type definition in your `OrdersTable` component:
+
+---
+
+<details>
+            <summary>Searched codebase "OrdersTable" • **2** results</summary>
+        
+| File |
+|------|
+| `undefined` |
+| `undefined` |
+
+</details>
+
+---
+
+Read file: components/dashboard/orders-table.tsx
+
+---
+
+Read file: types/pos.ts
+
+---
+
+```diff
+  import { OrdersTable } from "@/components/dashboard/orders-table";
+  import { useSearchParams, useRouter } from "next/navigation";
++ 
++ // Define a simplified order summary type
++ interface OrderSummary {
++   id: string;
++   number: string;
++   date: string;
++   customer: string;
++   status: string;
++   total: number;
++ }
+  
+  // Create a separate component that uses useSearchParams
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState(orderId ? "details" : "list");
+-   const [orders, setOrders] = useState<
+-     Array<{
+-       id: string;
+-       number: string;
+-       date: string;
+-       customer: string;
+-       status: string;
+-       total: number;
+-     }>
+-   >([]);
++   const [orders, setOrders] = useState<OrderSummary[]>([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+    const [orderDetails, setOrderDetails] = useState<Order | null>(null);
+```
+
+---
+
+```diff
+  import { RefundHistoryCell } from "@/components/dashboard/refund-history-cell";
+  import type { Order } from "@/types/pos";
++ import { OrderSummary } from "@/types/pos";
++ 
+  interface OrdersTableProps {
+    status?: string;
+-   initialOrders: Order[];
++   initialOrders: Order[] | OrderSummary[];
+    onOrderClick?: (id: string) => void;
+  }
+```
+
+---
+
+```diff
+    products: string[];
+  }
++ 
++ export interface OrderSummary {
++   id: string;
++   number: string;
++   date: string;
++   customer: string;
++   status: string;
++   total: number;
++ }
+  
+```
+
+---
+
 Cancelled
 
 ---
+
+_**User**_
+
+For the code present, we get this error:
+```
+Argument of type 'Order[] | OrderSummary[]' is not assignable to parameter of type 'Order[] | (() => Order[])'.
+  Type 'OrderSummary[]' is not assignable to type 'Order[] | (() => Order[])'.
+    Type 'OrderSummary[]' is not assignable to type 'Order[]'.
+      Type 'OrderSummary' is missing the following properties from type 'Order': billing, shipping, payment, items, and 4 more.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+_**Assistant**_
 
 
 
