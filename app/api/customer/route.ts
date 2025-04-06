@@ -4,7 +4,7 @@ import {
   fetchAllCustomers, 
   createCustomer,
   CustomerData 
-} from "@/services/customer";
+} from "@/services/customer/create";
 
 /**
  * Gets all customers or a specific customer by ID
