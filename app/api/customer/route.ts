@@ -5,6 +5,7 @@ import {
   createCustomer,
   CustomerData 
 } from "@/services/customer/create";
+import { updateCustomerClientType } from "@/services/customer/update";
 
 /**
  * Gets all customers or a specific customer by ID
@@ -107,6 +108,74 @@ export async function POST(request: Request) {
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
+    );
+  }
+}
+
+/**
+ * Updates a customer's client_type in WordPress
+ */
+export async function PATCH(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: "Customer ID is required" },
+        { status: 400 }
+      );
+    }
+    
+    const data = await request.json();
+    
+    // Validate client_type
+    if (!data.client_type) {
+      return NextResponse.json(
+        { error: "client_type is required" },
+        { status: 400 }
+      );
+    }
+    
+    const validTypes = ["great", "good", "bad"] as const;
+    if (!validTypes.includes(data.client_type)) {
+      return NextResponse.json(
+        { 
+          error: "Invalid client_type",
+          message: "client_type must be one of: great, good, bad" 
+        },
+        { status: 400 }
+      );
+    }
+    
+    try {
+      const updatedCustomer = await updateCustomerClientType(
+        id, 
+        data.client_type
+      );
+      
+      return NextResponse.json({
+        success: true,
+        customer: updatedCustomer
+      });
+    } catch (error) {
+      if ((error as Error).message === "Customer not found") {
+        return NextResponse.json(
+          { error: "Customer not found" },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error("Failed to update customer client type:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to update customer client type",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
     );
   }
 }
