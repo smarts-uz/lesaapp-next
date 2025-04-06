@@ -141,11 +141,14 @@ export async function getProductsByParentOrderId(parentOrderId: number): Promise
       }
     });
 
+    // Convert bigint values to strings
+    const convertedProducts = convertRawProducts(allProducts as RawOrderProduct[]);
+
     // Calculate total quantity
-    const totalQuantity = allProducts.reduce((sum, product) => sum + product.product_qty, 0);
+    const totalQuantity = convertedProducts.reduce((sum, product) => sum + product.product_qty, 0);
 
     return {
-      products: allProducts,
+      products: convertedProducts,
       totalQuantity
     };
   } catch (error) {
@@ -219,7 +222,8 @@ export async function getRefundSummary(parentOrderId: number): Promise<RefundSum
         product_qty: true,
         product_net_revenue: true,
         product_gross_revenue: true,
-        date_created: true
+        date_created: true,
+        order_id: true
       }
     });
 
@@ -227,32 +231,80 @@ export async function getRefundSummary(parentOrderId: number): Promise<RefundSum
     const convertedOriginalProducts = convertRawProducts(originalProducts as RawOrderProduct[]);
     const convertedRefundProducts = convertRawProducts(refundedProducts as RawOrderProduct[]);
 
-    // Calculate remaining products (original - refunded)
-    const remainingProducts = convertedOriginalProducts.map((originalProduct: OrderProduct) => {
-      const refundedQty = convertedRefundProducts
-        .filter((refund: OrderProduct) => refund.product_id === originalProduct.product_id)
-        .reduce((sum: number, refund: OrderProduct) => sum + refund.product_qty, 0);
+    // Process refunded products (convert negative values to positive)
+    const processedRefundProducts = convertedRefundProducts.map(product => ({
+      ...product,
+      product_qty: Math.abs(product.product_qty),
+      product_net_revenue: Math.abs(product.product_net_revenue),
+      product_gross_revenue: Math.abs(product.product_gross_revenue)
+    }));
+
+    // Sort refunds by date
+    const sortedRefunds = [...processedRefundProducts].sort((a, b) => 
+      a.date_created.getTime() - b.date_created.getTime()
+    );
+
+    // Create a map to track remaining quantities for each original product
+    const remainingQtyMap = new Map<string, number>();
+    
+    // Initialize remaining quantities for each original product
+    convertedOriginalProducts.forEach((product, index) => {
+      const key = `${product.product_id}-${product.variation_id}-${index}`;
+      remainingQtyMap.set(key, product.product_qty);
+    });
+
+    // Process refunds in chronological order
+    const usedRefunds: OrderProduct[] = [];
+    sortedRefunds.forEach(refund => {
+      // Find the first matching original product that still has quantity to refund
+      for (let i = 0; i < convertedOriginalProducts.length; i++) {
+        const original = convertedOriginalProducts[i];
+        if (original.product_id === refund.product_id && 
+            original.variation_id === refund.variation_id) {
+          const key = `${original.product_id}-${original.variation_id}-${i}`;
+          const remainingQty = remainingQtyMap.get(key) || 0;
+          
+          if (remainingQty >= refund.product_qty) {
+            // Apply refund to this original product
+            remainingQtyMap.set(key, remainingQty - refund.product_qty);
+            usedRefunds.push(refund);
+            break;
+          }
+        }
+      }
+    });
+
+    // Calculate remaining products based on the remaining quantities
+    const remainingProducts = convertedOriginalProducts.map((original, index) => {
+      const key = `${original.product_id}-${original.variation_id}-${index}`;
+      const remainingQty = remainingQtyMap.get(key) || 0;
+
+      if (remainingQty <= 0) {
+        return null;
+      }
 
       return {
-        ...originalProduct,
-        product_qty: originalProduct.product_qty - refundedQty
+        ...original,
+        product_qty: remainingQty,
+        product_net_revenue: (original.product_net_revenue / original.product_qty) * remainingQty,
+        product_gross_revenue: (original.product_gross_revenue / original.product_qty) * remainingQty
       };
-    }).filter((product: OrderProduct) => product.product_qty > 0);
+    }).filter((product): product is OrderProduct => product !== null);
 
     return {
       originalOrder: {
         products: convertedOriginalProducts,
-        totalQuantity: convertedOriginalProducts.reduce((sum: number, product: OrderProduct) => 
+        totalQuantity: convertedOriginalProducts.reduce((sum, product) => 
           sum + product.product_qty, 0)
       },
       refundedProducts: {
-        products: convertedRefundProducts,
-        totalQuantity: convertedRefundProducts.reduce((sum: number, product: OrderProduct) => 
+        products: usedRefunds,
+        totalQuantity: usedRefunds.reduce((sum, product) => 
           sum + product.product_qty, 0)
       },
       remainingProducts: {
         products: remainingProducts,
-        totalQuantity: remainingProducts.reduce((sum: number, product: OrderProduct) => 
+        totalQuantity: remainingProducts.reduce((sum, product) => 
           sum + product.product_qty, 0)
       }
     };
