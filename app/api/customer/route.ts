@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { 
-  fetchCustomerById, 
-  fetchAllCustomers, 
+import {
+  fetchCustomerById,
+  fetchAllCustomers,
   createCustomer,
-  CustomerData 
+  CustomerData,
 } from "@/services/customer/create";
-import { updateCustomerClientType } from "@/services/customer/update";
+import {
+  updateCustomerClientType,
+  updateCustomerBlacklist,
+} from "@/services/customer/update";
 
 /**
  * Gets all customers or a specific customer by ID
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
         if ((error as Error).message === "Customer not found") {
           return NextResponse.json(
             { error: "Customer not found" },
-            { status: 404 },
+            { status: 404 }
           );
         }
         throw error;
@@ -34,7 +37,7 @@ export async function GET(request: Request) {
     else {
       const page = parseInt(searchParams.get("page") || "1");
       const limit = parseInt(searchParams.get("limit") || "20");
-      
+
       const result = await fetchAllCustomers(page, limit);
       return NextResponse.json(result);
     }
@@ -46,7 +49,7 @@ export async function GET(request: Request) {
         error: "Failed to fetch customers",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -79,22 +82,25 @@ export async function POST(request: Request) {
             "phone",
           ],
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     try {
       const customer = await createCustomer(data);
-      
+
       return NextResponse.json({
         success: true,
-        customer
+        customer,
       });
     } catch (error) {
-      if ((error as Error).message === "User with this username or email already exists") {
+      if (
+        (error as Error).message ===
+        "User with this username or email already exists"
+      ) {
         return NextResponse.json(
           { error: "User with this username or email already exists" },
-          { status: 409 },
+          { status: 409 }
         );
       }
       throw error;
@@ -107,28 +113,66 @@ export async function POST(request: Request) {
         error: "Failed to create customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 /**
- * Updates a customer's client_type in WordPress
+ * Updates a customer's properties in WordPress
  */
 export async function PATCH(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    
+    const action = searchParams.get("action");
+
     if (!id) {
       return NextResponse.json(
         { error: "Customer ID is required" },
         { status: 400 }
       );
     }
-    
+
+    // Handle blacklist update action
+    if (action === "update-blacklist") {
+      try {
+        const data = await request.json();
+
+        // Validate blacklist status
+        if (data.blacklist === undefined) {
+          return NextResponse.json(
+            { error: "blacklist status is required" },
+            { status: 400 }
+          );
+        }
+
+        // Ensure it's a boolean
+        const blacklistStatus = Boolean(data.blacklist);
+
+        const updatedCustomer = await updateCustomerBlacklist(
+          id,
+          blacklistStatus
+        );
+
+        return NextResponse.json({
+          success: true,
+          customer: updatedCustomer,
+        });
+      } catch (error) {
+        if ((error as Error).message === "Customer not found") {
+          return NextResponse.json(
+            { error: "Customer not found" },
+            { status: 404 }
+          );
+        }
+        throw error;
+      }
+    }
+
+    // Handle client_type update (default action)
     const data = await request.json();
-    
+
     // Validate client_type
     if (!data.client_type) {
       return NextResponse.json(
@@ -136,27 +180,27 @@ export async function PATCH(request: Request) {
         { status: 400 }
       );
     }
-    
+
     const validTypes = ["great", "good", "bad"] as const;
     if (!validTypes.includes(data.client_type)) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid client_type",
-          message: "client_type must be one of: great, good, bad" 
+          message: "client_type must be one of: great, good, bad",
         },
         { status: 400 }
       );
     }
-    
+
     try {
       const updatedCustomer = await updateCustomerClientType(
-        id, 
+        id,
         data.client_type
       );
-      
+
       return NextResponse.json({
         success: true,
-        customer: updatedCustomer
+        customer: updatedCustomer,
       });
     } catch (error) {
       if ((error as Error).message === "Customer not found") {
@@ -168,11 +212,11 @@ export async function PATCH(request: Request) {
       throw error;
     }
   } catch (error) {
-    console.error("Failed to update customer client type:", error);
+    console.error("Failed to update customer:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to update customer client type",
+        error: "Failed to update customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

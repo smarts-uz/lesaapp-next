@@ -534,6 +534,215 @@ You can change the ID value and client_type (to "good" or "bad") as needed.
 
 ---
 
+_**User**_
+
+Now create a end point that toggles the is_blacklist status of a user from wp_users 
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+- 
++ import { prisma } from "@/lib/prisma";
++ 
++ /**
++  * Toggles a customer's is_blacklist status in WordPress
++  * @param id - The customer's ID
++  * @returns The updated customer data with the toggled is_blacklist status
++  */
++ export async function updateCustomerBlacklist(id: string) {
++   const userId = BigInt(id);
++   
++   // Check if user exists
++   const user = await prisma.wp_users.findUnique({
++     where: { ID: userId },
++   });
++   
++   if (!user) {
++     throw new Error("Customer not found");
++   }
++   
++   // Toggle the is_blacklist status - if null/undefined, set to true
++   const currentStatus = user.is_blacklist ?? false;
++   
++   // Update the is_blacklist field
++   const updatedUser = await prisma.wp_users.update({
++     where: { ID: userId },
++     data: { is_blacklist: !currentStatus },
++   });
++   
++   // Get customer metadata from wp_usermeta
++   const userMeta = await prisma.wp_usermeta.findMany({
++     where: { user_id: userId },
++   });
++ 
++   // Convert metadata array to object for easier access
++   const metaObj: Record<string, string> = {};
++   userMeta.forEach((meta) => {
++     if (meta.meta_key && meta.meta_value) {
++       metaObj[meta.meta_key] = meta.meta_value;
++     }
++   });
++ 
++   // Get WooCommerce customer data
++   const wooCustomer = await prisma.wp_wc_customer_lookup.findFirst({
++     where: { user_id: userId },
++   });
++   
++   // Return the user data in a consistent format
++   return {
++     id: updatedUser.ID.toString(),
++     username: updatedUser.user_login,
++     email: updatedUser.user_email,
++     displayName: updatedUser.display_name,
++     firstName: metaObj["first_name"] || "",
++     lastName: metaObj["last_name"] || "",
++     phone: updatedUser.phone || metaObj["phone"] || metaObj["billing_phone"] || "",
++     client_type: updatedUser.client_type,
++     is_blacklist: updatedUser.is_blacklist,
++     dateRegistered: updatedUser.user_registered,
++     lastActive: wooCustomer?.date_last_active || null,
++   };
++ } 
+```
+
+---
+
+```diff
+  export { updateCustomerClientType } from "./updateCustomerClientType";
++ export { updateCustomerBlacklist } from "./updateCustomerBlacklist";
+  
+```
+
+---
+
+```diff
+    CustomerData 
+  } from "@/services/customer/create";
+- import { updateCustomerClientType } from "@/services/customer/update";
++ import { 
++   updateCustomerClientType,
++   updateCustomerBlacklist 
++ } from "@/services/customer/update";
+  
+  /**
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get("id");
++     const action = searchParams.get("action");
+      
+      if (!id) {
+      }
+      
++     // Handle blacklist toggle action
++     if (action === "toggle-blacklist") {
++       try {
++         const updatedCustomer = await updateCustomerBlacklist(id);
++         
++         return NextResponse.json({
++           success: true,
++           customer: updatedCustomer
++         });
++       } catch (error) {
++         if ((error as Error).message === "Customer not found") {
++           return NextResponse.json(
++             { error: "Customer not found" },
++             { status: 404 }
++           );
++         }
++         throw error;
++       }
++     }
++     
++     // Handle client_type update (default action)
+      const data = await request.json();
+      
+      }
+    } catch (error) {
+-     console.error("Failed to update customer client type:", error);
++     console.error("Failed to update customer:", error);
+      return NextResponse.json(
+        {
+          success: false,
+-         error: "Failed to update customer client type",
++         error: "Failed to update customer",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
+```
+
+---
+
+I've created an endpoint to toggle a customer's blacklist status. This new feature:
+
+1. Updates the `is_blacklist` boolean field in the wp_users table
+2. Toggles between true/false (or sets to true if it was null)
+3. Returns the updated customer data
+
+## How to use it:
+
+```
+PATCH /api/customer?id=1&action=toggle-blacklist
+```
+
+This is a "no-body" request - you don't need to send any JSON data, just the URL parameters:
+- `id`: The customer ID to update
+- `action`: Set to "toggle-blacklist" to trigger this functionality
+
+## Example cURL:
+
+```
+curl -X PATCH "http://localhost:3000/api/customer?id=1&action=toggle-blacklist"
+```
+
+The response will include the updated customer data with the new blacklist status:
+
+```json
+{
+  "success": true,
+  "customer": {
+    "id": "1",
+    "username": "username",
+    "email": "email@example.com",
+    "displayName": "Display Name",
+    "firstName": "First",
+    "lastName": "Last",
+    "phone": "1234567890",
+    "client_type": "good",
+    "is_blacklist": true,
+    "dateRegistered": "2023-01-01T00:00:00.000Z",
+    "lastActive": "2023-04-01T00:00:00.000Z"
+  }
+}
+```
+
+The implementation follows the same patterns as the client_type update functionality, maintaining consistency across the API.
+
+---
+
+_**User**_
+
+now change it from toggle to set user blacklist status
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+Cancelled
+
+---
+
+
+
+---
+
 
 
 ---
