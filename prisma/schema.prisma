@@ -212,19 +212,42 @@ model wp_usermeta {
 }
 
 model wp_users {
-  ID                  BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  user_login          String   @default("") @db.VarChar(60)
-  user_pass           String   @default("") @db.VarChar(255)
-  user_nicename       String   @default("") @db.VarChar(50)
-  user_email          String   @default("") @db.VarChar(100)
-  user_url            String   @default("") @db.VarChar(100)
-  user_registered     DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
-  user_activation_key String   @default("") @db.VarChar(255)
-  user_status         Int      @default(0)
-  display_name        String   @default("") @db.VarChar(250)
-  phone               String?  @db.VarChar(255)
-  is_blacklist        Boolean?
-  client_type         String?  @db.VarChar(255)
+  ID                    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_login            String    @default("") @db.VarChar(60)
+  user_pass             String    @default("") @db.VarChar(255)
+  user_nicename         String    @default("") @db.VarChar(50)
+  user_email            String    @default("") @db.VarChar(100)
+  user_url              String    @default("") @db.VarChar(100)
+  user_registered       DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
+  user_activation_key   String    @default("") @db.VarChar(255)
+  user_status           Int       @default(0)
+  display_name          String    @default("") @db.VarChar(250)
+  date_of_birth         DateTime? @db.DateTime(0)
+  phone                 String?   @db.VarChar(255)
+  phone_second          String?   @db.VarChar(255)
+  passport_no           Int?
+  telegram_user         String?   @db.VarChar(255)
+  city                  String?   @db.VarChar(255)
+  address               String?   @db.VarChar(255)
+  location              String?   @db.VarChar(255)
+  is_blacklist          Boolean?
+  client_type           String?   @db.VarChar(255)
+  company_name          String?   @db.VarChar(255)
+  is_company            Int?      @db.TinyInt
+  is_driver             Int?      @db.TinyInt
+  is_vendor             Int?      @db.UnsignedTinyInt
+  company_bank_profile  String?   @db.VarChar(255)
+  company_inn           String?   @db.VarChar(255)
+  company_mfo           String?   @db.VarChar(255)
+  company_rs            String?   @db.VarChar(255)
+  company_founded       DateTime? @db.DateTime(0)
+  notes                 String?   @db.VarChar(255)
+  company_logo          String?   @db.Text
+  conmpany_website      String?   @db.VarChar(255)
+  telegram_notification String?   @db.VarChar(255)
+  email_notification    String?   @db.VarChar(255)
+  sms_notification      String?   @db.VarChar(255)
+  is_legal_entity       Int?      @db.TinyInt
 
   @@index([user_email], map: "user_email")
   @@index([user_login], map: "user_login_key")
@@ -383,6 +406,9 @@ model wp_wc_order_product_lookup {
   order_item_id         BigInt   @id @db.UnsignedBigInt
   order_id              BigInt   @db.UnsignedBigInt
   product_id            BigInt   @db.UnsignedBigInt
+  parent_product_id     Int?
+  is_bundle             Int?     @db.TinyInt
+  in_bundle             Int?     @db.TinyInt
   variation_id          BigInt   @db.UnsignedBigInt
   customer_id           BigInt?  @db.UnsignedBigInt
   date_created          DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
@@ -396,6 +422,8 @@ model wp_wc_order_product_lookup {
   rental_price          BigInt?
   used_days             Int?
   discount_days         Int?
+  refunded_qty          Int?
+  remaining_qty         Int?
 
   @@index([customer_id], map: "customer_id")
   @@index([date_created], map: "date_created")
@@ -438,10 +466,11 @@ model wp_wc_order_tax_lookup {
 }
 
 model wp_wc_orders {
-  id                   BigInt    @id @db.UnsignedBigInt
+  id                   BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   status               String?   @db.VarChar(20)
   currency             String?   @db.VarChar(10)
   type                 String?   @db.VarChar(20)
+  is_sale_order        Int?      @db.TinyInt
   tax_amount           Decimal?  @db.Decimal(26, 8)
   total_amount         Decimal?  @db.Decimal(26, 8)
   customer_id          BigInt?   @db.UnsignedBigInt
@@ -463,6 +492,15 @@ model wp_wc_orders {
   is_completed         Boolean?
   rental_status        String?   @db.VarChar(255)
   loan_price           BigInt?
+  driver_id            Int?
+  delivery_price       BigInt?
+  delivery_address     String?   @db.VarChar(255)
+  delivery_location    String?   @db.VarChar(255)
+  debt_price           Decimal?  @db.Decimal(10, 2)
+  advance_amount       String?   @db.VarChar(255)
+  paused_days          BigInt?
+  debt_limit           Decimal?  @db.Decimal(10, 2)
+  is_paused            Int?      @db.TinyInt
 
   @@index([billing_email(length: 191)], map: "billing_email")
   @@index([customer_id, billing_email(length: 171)], map: "customer_id_billing_email")
@@ -658,10 +696,14 @@ model wp_woocommerce_order_itemmeta {
 }
 
 model wp_woocommerce_order_items {
-  order_item_id   BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  order_item_name String @db.Text
-  order_item_type String @default("") @db.VarChar(200)
-  order_id        BigInt @db.UnsignedBigInt
+  order_item_id   BigInt  @id @default(autoincrement()) @db.UnsignedBigInt
+  order_item_name String  @db.Text
+  order_item_type String  @default("") @db.VarChar(200)
+  order_id        BigInt  @db.UnsignedBigInt
+  is_bundle       Int?    @db.TinyInt
+  parent_item_id  Int?
+  price           BigInt?
+  quantity        BigInt?
 
   @@index([order_id], map: "order_id")
 }
@@ -746,12 +788,24 @@ model wp_woocommerce_tax_rates {
   @@index([tax_rate_state(length: 2)], map: "tax_rate_state")
 }
 
-model wp_wc_order_lost_product {
+model wp_wc_customer_payment {
+  id             Int       @id
+  order_id       Int?
+  customer_id    Int?
+  paymant_amount BigInt?
+  payment_type   String?   @db.VarChar(255)
+  date           DateTime? @db.DateTime(0)
+  vendor_id      Int?
+  description    String?   @db.Text
+}
+
+model wp_wc_order_compromised_product {
   order_item_id         BigInt   @id @db.UnsignedBigInt
   order_id              BigInt   @db.UnsignedBigInt
   product_id            BigInt   @db.UnsignedBigInt
   variation_id          BigInt   @db.UnsignedBigInt
   customer_id           BigInt?  @db.UnsignedBigInt
+  status                String?  @db.VarChar(255)
   date_created          DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
   product_qty           Int
   product_net_revenue   Float    @default(0)
@@ -769,4 +823,19 @@ model wp_wc_order_lost_product {
   @@index([date_created], map: "date_created")
   @@index([order_id], map: "order_id")
   @@index([product_id], map: "product_id")
+}
+
+model wp_wc_orders_paused {
+  id               BigInt    @id
+  order_id         String?   @db.VarChar(255)
+  pause_start_date DateTime? @db.DateTime(0)
+  pause_end_date   DateTime? @db.DateTime(0)
+  paused_days      BigInt?
+}
+
+model wp_wc_vendor_expenses {
+  id             BigInt  @id
+  vendor_id      Int?
+  name           String? @db.VarChar(255)
+  expense_amount BigInt?
 }
